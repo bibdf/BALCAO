@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Biblioteca Escolar — EB D. Fernando II</title>
+<!-- Powered by Claude IA & Ideias&Soltas — concepção de produtos multimédia -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#edf1f6; --line:#dde3eb; --line-2:#c9d2de;
+  --fg:#161c24; --fg-2:#4a5566; --fg-3:#737f8f;
+  --accent:#1e4e8c; --accent-hover:#173e70; --accent-fg:#ffffff; --accent-soft:#e6eef8;
+  --r:12px; --gutter:clamp(16px,4vw,40px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+    --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+    --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+  --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+  --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+  color-scheme: dark;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font:400 15px/1.55 "Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--fg); min-height:100vh; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
+main { width:100%; max-width:880px; margin:0 auto; padding:56px var(--gutter) 40px; flex:1; display:flex; flex-direction:column; gap:32px; }
+.cab .escola { font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--fg-3); }
+.cab h1 { font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-weight:700; font-size:clamp(30px,5vw,44px); letter-spacing:-.025em; line-height:1.1; color:var(--accent); margin-top:6px; }
+.cab p { color:var(--fg-2); margin-top:10px; max-width:60ch; }
+.apps { display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:16px; }
+.app { display:flex; flex-direction:column; gap:14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:24px; text-decoration:none; color:inherit; transition:border-color .15s, background .15s, transform .15s; }
+.app:hover { border-color:var(--accent); background:var(--accent-soft); transform:translateY(-2px); }
+.app:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+.ic { width:48px; height:48px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; }
+.app:hover .ic { background:var(--accent); color:var(--accent-fg); }
+.ic svg { width:24px; height:24px; }
+.app h2 { font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-size:22px; letter-spacing:-.02em; }
+.app p { color:var(--fg-2); font-size:14px; }
+.app ul { list-style:none; display:flex; flex-wrap:wrap; gap:6px; }
+.app li { font-size:12px; font-weight:600; padding:3px 10px; border-radius:999px; background:var(--surface-2); color:var(--fg-2); }
+.abrir { margin-top:auto; font-weight:700; color:var(--accent); }
+.nota { font-size:13px; color:var(--fg-3); border-top:1px solid var(--line); padding-top:16px; }
+footer { text-align:center; font-size:12px; color:var(--fg-3); padding:0 var(--gutter) 28px; }
+</style>
+</head>
+<body>
+<main>
+  <header class="cab">
+    <div class="escola">EB D. Fernando II · Agrupamento de Escolas Monte da Lua</div>
+    <h1>Biblioteca Escolar</h1>
+    <p>Aplicações da equipa da biblioteca. Escolha o que quer abrir.</p>
+  </header>
+
+  <section class="apps">
+    <a class="app" href="https://script.google.com/a/macros/essmaria.net/s/AKfycbznazCSzJ0y_hacht-Wy2ZUe2__nR3BQyRJ-O56EBFAiMb5rq4lptg1kU8cHeXMTiVX/exec?p=balcao">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h7a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-7a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h7z"/></svg></span>
+      <h2>Balcão</h2>
+      <p>O dia a dia da biblioteca: emprestar e receber livros, registar quem entra e reservar o espaço.</p>
+      <ul><li>Requisições</li><li>Atividade</li><li>Espaço</li><li>Em atraso</li></ul>
+      <span class="abrir">Abrir o Balcão →</span>
+    </a>
+    <a class="app" href="https://script.google.com/a/macros/essmaria.net/s/AKfycbznazCSzJ0y_hacht-Wy2ZUe2__nR3BQyRJ-O56EBFAiMb5rq4lptg1kU8cHeXMTiVX/exec">
+      <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></span>
+      <h2>Estatísticas</h2>
+      <p>Painel com os números da biblioteca por período, pronto a imprimir todas as semanas.</p>
+      <ul><li>Leituras</li><li>Presenças</li><li>Espaço</li><li>Impressão A4</li></ul>
+      <span class="abrir">Abrir as Estatísticas →</span>
+    </a>
+  </section>
+
+  <p class="nota">Uso interno da equipa da Biblioteca Escolar. Por favor, não partilhe este endereço.</p>
+</main>
+<footer>Powered by Claude IA &amp; Ideias&amp;Soltas — concepção de produtos multimédia</footer>
+</body>
+</html>
