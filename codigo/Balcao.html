@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<title>Biblioteca — Balcão</title>
+<!--
+  Balcao.html — App da equipa da Biblioteca Escolar (Google Apps Script)
+  Colar num ficheiro HTML chamado "Balcao" no mesmo projeto do Code.gs.
+  Abre com o endereço da aplicação web seguido de ?p=balcao
+  Powered by Claude IA & Ideias&Soltas — concepção de produtos multimédia
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+:root {
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#edf1f6; --line:#dde3eb; --line-2:#c9d2de;
+  --fg:#161c24; --fg-2:#4a5566; --fg-3:#737f8f;
+  --accent:#1e4e8c; --accent-hover:#173e70; --accent-fg:#ffffff; --accent-soft:#e6eef8;
+  --ok:#0f7a37; --ok-soft:#e3f3e8; --warn:#8a5a00; --warn-soft:#fff3d6; --crit:#b3261e; --crit-soft:#fde8e6; --crit-fg:#ffffff;
+  --shadow-lg:0 12px 40px rgba(22,28,36,.22);
+  --r:10px; --r-sm:6px; --gutter:clamp(16px,3vw,32px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+    --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+    --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+    --ok:#6fd08f; --ok-soft:#1b3325; --warn:#f3c562; --warn-soft:#3a2f14; --crit:#ff8a80; --crit-soft:#3d1f1d; --crit-fg:#2a0d0b;
+    --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+  --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+  --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+  --ok:#6fd08f; --ok-soft:#1b3325; --warn:#f3c562; --warn-soft:#3a2f14; --crit:#ff8a80; --crit-soft:#3d1f1d; --crit-fg:#2a0d0b;
+  --shadow-lg:0 12px 40px rgba(0,0,0,.6);
+  color-scheme: dark;
+}
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font:400 14px/1.5 "Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--fg); -webkit-font-smoothing:antialiased; }
+h1, h2, h3 { font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-weight:700; letter-spacing:-.02em; line-height:1.2; }
+h2 { font-size:18px; } h3 { font-size:15px; }
+button, select, input, textarea { font:inherit; color:inherit; }
+[hidden] { display:none !important; }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+.label-xs { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--fg-3); }
+.num { font-variant-numeric:tabular-nums; }
+
+/* Barra */
+.barra { position:sticky; top:0; z-index:50; background:var(--surface); border-bottom:1px solid var(--line); }
+.barra-in { max-width:1280px; margin:0 auto; padding:10px var(--gutter) 0; display:flex; flex-direction:column; gap:6px; }
+.barra-topo { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.marca { display:flex; align-items:baseline; gap:10px; min-width:0; }
+.marca b { font-family:"Bricolage Grotesque",sans-serif; font-size:22px; letter-spacing:-.02em; color:var(--accent); }
+.marca span { font-size:13px; color:var(--fg-3); white-space:nowrap; }
+.acoes { display:flex; gap:8px; flex-wrap:wrap; }
+.btn { font-size:13px; font-weight:500; padding:7px 12px; border-radius:var(--r-sm); border:1px solid var(--line-2); background:var(--surface); color:var(--fg); cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; text-decoration:none; }
+.btn:hover { background:var(--surface-2); }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+.btn-pri { background:var(--accent); border-color:var(--accent); color:var(--accent-fg); }
+.btn-pri:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+.btn-crit { background:var(--crit); border-color:var(--crit); color:var(--crit-fg); }
+.btn-sm { padding:4px 9px; font-size:12px; }
+.separadores { display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; }
+.sep { font-size:14px; font-weight:600; padding:10px 16px; background:none; border:0; border-bottom:2px solid transparent; color:var(--fg-2); cursor:pointer; white-space:nowrap; display:inline-flex; align-items:center; gap:6px; }
+.sep:hover { color:var(--fg); }
+.sep[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); }
+.contador { font-size:11px; font-weight:700; padding:1px 7px; border-radius:999px; background:var(--crit); color:var(--crit-fg); }
+
+main { max-width:1280px; margin:0 auto; padding:20px var(--gutter) 64px; display:flex; flex-direction:column; gap:16px; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.card-cab { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.nota { font-size:12px; color:var(--fg-3); }
+.aviso-data { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; padding:8px 12px; border-radius:var(--r-sm); background:var(--surface-2); font-size:13px; margin-bottom:12px; }
+.aviso-data input { width:auto; }
+.aviso-data.passado { box-shadow:inset 4px 0 0 #e0a800; font-weight:600; }
+.cel.passado-livre { background:var(--surface-2); }
+.cel:disabled { cursor:default; border-style:solid; border-color:transparent; background:var(--surface-2); }
+.vazio { color:var(--fg-3); font-size:13px; padding:8px 0; }
+.aviso-erro { background:var(--crit-soft); border:1px solid var(--crit); color:var(--crit); padding:12px 16px; border-radius:var(--r-sm); font-weight:500; }
+.carregar { color:var(--fg-3); padding:40px 0; text-align:center; }
+
+/* Migalhas */
+.migalhas { display:flex; align-items:center; gap:6px; flex-wrap:wrap; font-size:14px; }
+.migalhas button { background:none; border:0; color:var(--accent); cursor:pointer; font-weight:600; padding:2px 0; }
+.migalhas button:hover { text-decoration:underline; }
+.migalhas .sepm { color:var(--fg-3); }
+.migalhas .atual { font-weight:700; }
+
+/* Grelha de turmas */
+.grelha-turmas { display:grid; grid-template-columns:repeat(auto-fill, minmax(120px, 1fr)); gap:10px; }
+.turma-btn { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 12px; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:4px; min-height:84px; }
+.turma-btn:hover { border-color:var(--accent); background:var(--accent-soft); }
+.turma-btn b { font-family:"Bricolage Grotesque",sans-serif; font-size:24px; letter-spacing:-.02em; }
+.turma-btn span { font-size:12px; color:var(--fg-3); }
+.turma-btn .falta { color:var(--crit); font-weight:700; }
+.ano-titulo { margin-top:6px; }
+
+/* Lista de alunos */
+.lista-alunos { display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:8px; }
+.aluno-btn { display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 12px; cursor:pointer; text-align:left; }
+.aluno-btn:hover { border-color:var(--accent); background:var(--accent-soft); }
+.aluno-btn .n { width:26px; text-align:right; color:var(--fg-3); font-variant-numeric:tabular-nums; flex:none; }
+.aluno-btn .nm { flex:1; min-width:0; font-weight:600; }
+.aluno-btn.em-falta .nm { color:var(--crit); }
+.pill { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.pill-falta { background:var(--crit); color:var(--crit-fg); }
+.pill-fora { background:var(--accent-soft); color:var(--accent); }
+.pill-prorr { background:var(--surface-2); color:var(--fg-2); }
+
+/* Ficha do aluno */
+.ficha { display:grid; grid-template-columns:minmax(0,6fr) minmax(0,5fr); gap:16px; align-items:start; }
+.req { border:1px solid var(--line); border-left:4px solid var(--line-2); border-radius:var(--r-sm); padding:12px; display:flex; flex-direction:column; gap:6px; }
+.req .titulo { font-weight:700; }
+.req .sit { font-weight:600; }
+.req .datas { font-size:12px; color:var(--fg-2); display:flex; flex-wrap:wrap; gap:4px 14px; }
+.req .acts { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.req.grave { border-left-color:var(--crit); background:var(--crit-soft); }
+.req.grave .sit, .req.falta .sit { color:var(--crit); }
+.req.falta { border-left-color:var(--crit); }
+.req.breve { border-left-color:var(--warn); }
+.req.breve .sit { color:var(--warn); }
+.req.ok { border-left-color:var(--accent); }
+.req.dev { border-left-color:var(--ok); opacity:.85; }
+.req.dev .sit { color:var(--ok); }
+.alerta-aluno { background:var(--crit-soft); color:var(--crit); border-radius:var(--r-sm); padding:10px 12px; font-weight:600; }
+details summary { cursor:pointer; color:var(--fg-2); font-weight:600; font-size:13px; padding:4px 0; }
+
+/* Formulários */
+.campo { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.campo input, .campo select, .campo textarea { padding:8px 10px; border-radius:var(--r-sm); border:1px solid var(--line-2); background:var(--surface); color:var(--fg); min-width:0; width:100%; }
+.campo textarea { min-height:80px; resize:vertical; }
+.linha-campos { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:10px; }
+.previsao { background:var(--surface-2); border-radius:var(--r-sm); padding:10px 12px; font-size:13px; }
+
+/* Atividades */
+.atividades { display:grid; grid-template-columns:repeat(auto-fill, minmax(190px, 1fr)); gap:10px; }
+.ativ-btn { background:var(--surface); border:2px solid var(--line); border-radius:var(--r); padding:18px 14px; cursor:pointer; display:flex; align-items:center; gap:12px; font-size:15px; font-weight:600; text-align:left; }
+.ativ-btn:hover { border-color:var(--accent); background:var(--accent-soft); }
+.ativ-btn .ic { width:36px; height:36px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; flex:none; }
+.ativ-btn svg { width:20px; height:20px; }
+.hoje-lista { display:flex; flex-direction:column; gap:0; font-size:13px; }
+.hoje-lista div { display:grid; grid-template-columns:48px 44px minmax(0,1fr) auto; gap:8px; padding:5px 0; border-top:1px solid var(--line); align-items:center; }
+.aluno-btn.sel { border-color:var(--accent); background:var(--accent-soft); box-shadow:inset 0 0 0 1px var(--accent); }
+.aluno-btn.sel .n { color:var(--accent); font-weight:700; }
+.grupo-lista { display:flex; flex-wrap:wrap; gap:6px; }
+.chip { display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:600; padding:3px 4px 3px 10px; border-radius:999px; background:var(--accent-soft); color:var(--accent); }
+.chip button { background:none; border:0; color:inherit; cursor:pointer; font-size:14px; line-height:1; padding:2px 6px; }
+.cab-acoes { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.info-livro { font-size:13px; color:var(--fg-2); min-height:20px; }
+.info-livro.esgotado { color:var(--crit); font-weight:600; }
+.mat-grupo { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px; }
+.mat-btn { background:var(--surface); border:2px solid var(--line); border-radius:var(--r-sm); padding:12px 10px; cursor:pointer; text-align:left; display:flex; flex-direction:column; gap:2px; font-weight:600; min-height:58px; }
+.mat-btn:hover:not(:disabled) { border-color:var(--accent); background:var(--accent-soft); }
+.mat-btn span { font-size:11px; font-weight:500; color:var(--fg-3); }
+.mat-btn:disabled { cursor:not-allowed; opacity:.6; background:var(--surface-2); }
+.lado { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.pcs-uso { display:flex; flex-direction:column; font-size:13px; }
+.pcs-uso div { display:grid; grid-template-columns:52px minmax(0,1fr) auto; gap:8px; padding:6px 0; border-top:1px solid var(--line); align-items:center; }
+.pcs-uso div:first-child { border-top:0; }
+.pcs-uso b { font-family:"Bricolage Grotesque",sans-serif; }
+.btn-lig { background:none; border:0; color:var(--accent); font-size:12px; font-weight:600; cursor:pointer; padding:2px 4px; }
+.btn-lig:hover { text-decoration:underline; }
+.pesq { position:relative; flex:1 1 260px; max-width:420px; min-width:0; }
+.pesq input { width:100%; padding:7px 12px; border-radius:var(--r-sm); border:1px solid var(--line-2); background:var(--surface); color:var(--fg); }
+.pesq-res { position:absolute; left:0; right:0; top:calc(100% + 4px); background:var(--surface); border:1px solid var(--line-2); border-radius:var(--r-sm); box-shadow:var(--shadow-lg); z-index:60; max-height:min(70vh, 480px); overflow:auto; }
+.pesq-res .grupo { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--fg-3); padding:8px 12px 4px; }
+.pesq-res button, .pesq-res .item { display:block; width:100%; text-align:left; background:none; border:0; padding:8px 12px; font-size:13px; border-top:1px solid var(--line); }
+.pesq-res button { cursor:pointer; }
+.pesq-res button:hover, .pesq-res button:focus { background:var(--accent-soft); }
+.pesq-res .sec { display:block; font-size:12px; color:var(--fg-3); }
+.pesq-res .sec.falta { color:var(--crit); font-weight:600; }
+.login { max-width:380px; margin:8vh auto 0; }
+.hoje-lista div:first-child { border-top:0; }
+.pcs { display:grid; grid-template-columns:repeat(5, minmax(0,1fr)); gap:8px; }
+.pc-btn { background:var(--surface); border:2px solid var(--line); border-radius:var(--r-sm); padding:10px 4px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:2px; min-height:64px; justify-content:center; }
+.pc-btn:hover { border-color:var(--accent); background:var(--accent-soft); }
+.pc-btn b { font-family:"Bricolage Grotesque",sans-serif; font-size:22px; line-height:1; }
+.pc-btn span { font-size:11px; color:var(--fg-3); }
+.pc-btn.recente { border-color:var(--warn); background:var(--warn-soft); }
+.pc-btn.recente span { color:var(--warn); font-weight:600; }
+
+/* Grelha do espaço */
+.semana-ctl { display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap; }
+.semana-ctl .titulo-sem { font-family:"Bricolage Grotesque",sans-serif; font-size:17px; font-weight:700; margin-right:auto; }
+.tabela-wrap { overflow-x:auto; }
+table.grelha { width:100%; border-collapse:separate; border-spacing:4px; min-width:720px; table-layout:fixed; }
+.grelha col.ct { width:100px; }
+.grelha th { font-size:12px; font-weight:600; color:var(--fg-2); text-align:center; padding:4px; }
+.grelha th.hoje { color:var(--accent); }
+.grelha td.t { font-size:12px; color:var(--fg-2); white-space:nowrap; padding:4px 6px; }
+.grelha td.t b { display:block; color:var(--fg); }
+.cel { width:100%; min-height:52px; border-radius:var(--r-sm); border:1px dashed var(--line-2); background:transparent; cursor:pointer; font-size:12px; color:var(--fg-3); padding:6px; text-align:left; display:flex; flex-direction:column; justify-content:center; gap:2px; }
+.cel:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+.cel.ocupada { border:1px solid transparent; background:var(--accent); color:var(--accent-fg); }
+.cel.ocupada:hover { background:var(--accent-hover); color:var(--accent-fg); }
+.cel.ocupada b { font-size:12px; }
+.cel.ocupada span { opacity:.9; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.cel.passado { background:var(--surface-2); border-style:solid; border-color:transparent; cursor:default; }
+.cel.passado:hover { color:var(--fg-3); background:var(--surface-2); }
+.cel.ocupada.passado { background:var(--line-2); color:var(--fg); cursor:pointer; }
+
+/* Tabela de atrasos */
+table.tab { width:100%; border-collapse:collapse; font-size:13px; }
+.tab th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-3); padding:7px 8px; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+.tab td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+.tab .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tab tr.sub td { background:var(--surface-2); font-weight:600; }
+.tab tr.clic { cursor:pointer; }
+.tab tr.clic:hover td { background:var(--accent-soft); }
+
+/* Janela (modal) e aviso */
+.veu { position:fixed; inset:0; background:rgba(12,16,22,.45); z-index:80; display:grid; place-items:center; padding:16px; }
+.janela { background:var(--surface); border-radius:var(--r); box-shadow:var(--shadow-lg); width:min(520px, 100%); max-height:calc(100vh - 32px); overflow:auto; padding:20px; display:flex; flex-direction:column; gap:12px; }
+.janela .fim { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; }
+.toast { position:fixed; left:50%; bottom:20px; transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:10px 16px; border-radius:8px; font-weight:500; z-index:90; box-shadow:var(--shadow-lg); max-width:calc(100% - 32px); }
+.toast.crit { background:var(--crit); color:var(--crit-fg); }
+footer { max-width:1280px; margin:0 auto; padding:0 var(--gutter) 32px; text-align:center; font-size:12px; color:var(--fg-3); }
+
+@media (max-width:900px) { .ficha { grid-template-columns:minmax(0,1fr); } }
+@media (max-width:600px) {
+  .marca span { display:none; }
+  .pesq { order:3; flex-basis:100%; max-width:none; }
+  .sep { padding:10px 10px; font-size:13px; }
+  .lista-alunos { grid-template-columns:minmax(0,1fr); }
+}
+</style>
+</head>
+<body>
+<header class="barra">
+  <div class="barra-in">
+    <div class="barra-topo">
+      <div class="marca"><b>Biblioteca</b><span>Balcão · EB D. Fernando II</span></div>
+      <div class="pesq" id="pesqCaixa" hidden>
+        <input type="search" id="pesq" placeholder="Procurar aluno, n.º de processo ou livro…" autocomplete="off" aria-label="Procurar aluno, número de processo ou livro">
+        <div class="pesq-res" id="pesqRes" hidden></div>
+      </div>
+      <div class="acoes">
+        <button class="btn" type="button" id="btnBloquear" hidden>Bloquear</button>
+        <button class="btn" type="button" id="btnTema">Tema</button>
+        <button class="btn" type="button" id="btnAtualizar">Atualizar</button>
+        <a class="btn btn-pri" id="lnkEstat" href="<?= urlBase ?>" target="_top">Estatísticas</a>
+      </div>
+    </div>
+    <nav class="separadores" role="tablist" aria-label="Módulos">
+      <button class="sep" type="button" role="tab" data-mod="req" aria-selected="true">Requisições</button>
+      <button class="sep" type="button" role="tab" data-mod="ativ" aria-selected="false">Atividade</button>
+      <button class="sep" type="button" role="tab" data-mod="esp" aria-selected="false">Espaço</button>
+      <button class="sep" type="button" role="tab" data-mod="mat" aria-selected="false">Material</button>
+      <button class="sep" type="button" role="tab" data-mod="atr" aria-selected="false">Em atraso <span class="contador" id="cntAtraso" hidden></span></button>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="carregar" id="carregar">A carregar os dados da biblioteca…</div>
+  <div class="aviso-erro" id="erroGeral" hidden></div>
+  <section id="login" class="card login" hidden>
+    <h2>Código de acesso</h2>
+    <p class="nota">Esta aplicação é só para a equipa da biblioteca. Escreva o código para entrar; fica guardado neste computador.</p>
+    <label class="campo"><span class="label-xs">Código</span><input type="password" id="fPin" autocomplete="off" maxlength="40"></label>
+    <div class="aviso-erro" id="erroPin" hidden></div>
+    <div><button class="btn btn-pri" type="button" id="btnEntrar">Entrar</button></div>
+  </section>
+  <section id="vista" hidden></section>
+</main>
+
+<footer>Powered by Claude IA &amp; Ideias&amp;Soltas — concepção de produtos multimédia</footer>
+
+<div class="veu" id="veu" hidden><div class="janela" id="janela" role="dialog" aria-modal="true"></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(function () {
+  "use strict";
+
+  // ---------------- Utilitários ----------------
+  function $(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t === null || t === undefined ? "" : t).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function isoUTC(iso) { var p = iso.split("-"); return Date.UTC(+p[0], +p[1] - 1, +p[2]); }
+  function somaIso(iso, n) { var d = new Date(isoUTC(iso) + n * 864e5); return d.toISOString().slice(0, 10); }
+  function difDias(aIso, bIso) { return Math.round((isoUTC(bIso) - isoUTC(aIso)) / 864e5); } // b − a
+  function fmt(iso) { if (!iso) return ""; var p = iso.split("-"); return p[2] + "/" + p[1] + "/" + p[0]; }
+  function fmtCurto(iso) { var p = iso.split("-"); return p[2] + "/" + p[1]; }
+  function diaSemana(iso) { return new Date(isoUTC(iso)).getUTCDay(); } // 0 = domingo
+  function segundaDe(iso) { var d = diaSemana(iso); return somaIso(iso, d === 0 ? -6 : 1 - d); }
+  function plural(n, um, varios) { return n + " " + (n === 1 ? um : varios); }
+  function ordNome(a, b) { return a.localeCompare(b, "pt"); }
+  function ordTurma(a, b) { return a.localeCompare(b, "pt", { numeric: true }); }
+
+  var toastT = null;
+  function toast(msg, erro) {
+    var t = $("toast");
+    t.textContent = msg; t.className = "toast" + (erro ? " crit" : ""); t.hidden = false;
+    clearTimeout(toastT); toastT = setTimeout(function () { t.hidden = true; }, erro ? 6000 : 3000);
+  }
+
+  var TOKEN = "";
+  try { TOKEN = localStorage.getItem("biblioteca_token") || ""; } catch (e) {}
+  function correr(nome, args) {
+    return new Promise(function (resolve, reject) {
+      if (!(window.google && google.script && google.script.run)) { reject(new Error("Esta página tem de ser aberta a partir da aplicação web do Apps Script.")); return; }
+      var r = google.script.run.withSuccessHandler(resolve).withFailureHandler(function (e) { reject(e instanceof Error ? e : new Error(String((e && e.message) || e))); });
+      r[nome].apply(r, args);
+    });
+  }
+  // Todas as chamadas passam pela função "balcao" do servidor, que confirma o código de acesso.
+  function api(nome) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return correr("balcao", [TOKEN, nome, args]).catch(function (e) {
+      if (/SESSAO/.test(e.message)) { pedirCodigo(); throw new Error("É preciso introduzir o código de acesso."); }
+      throw e;
+    });
+  }
+  function guardarToken(t) { TOKEN = t || ""; try { if (TOKEN) localStorage.setItem("biblioteca_token", TOKEN); else localStorage.removeItem("biblioteca_token"); } catch (e) {} }
+  function pedirCodigo() {
+    guardarToken(""); D = null; fecharJanela();
+    $("carregar").hidden = true; $("vista").hidden = true; $("erroGeral").hidden = true;
+    $("pesqCaixa").hidden = true; $("btnBloquear").hidden = true; $("cntAtraso").hidden = true;
+    $("login").hidden = false; $("erroPin").hidden = true; $("fPin").value = ""; $("fPin").focus();
+  }
+  function entrar() {
+    var pin = $("fPin").value.trim(), b = $("btnEntrar");
+    if (!pin) { $("fPin").focus(); return; }
+    b.disabled = true; b.textContent = "A verificar…"; $("erroPin").hidden = true;
+    correr("entrar", [pin]).then(function (t) {
+      guardarToken(t); $("login").hidden = true; return carregar();
+    }).catch(function (e) {
+      $("erroPin").textContent = e.message; $("erroPin").hidden = false; $("fPin").select();
+    }).then(function () { b.disabled = false; b.textContent = "Entrar"; });
+  }
+  $("btnEntrar").addEventListener("click", entrar);
+  $("fPin").addEventListener("keydown", function (ev) { if (ev.key === "Enter") entrar(); });
+  $("btnBloquear").addEventListener("click", pedirCodigo);
+
+  // ---------------- Tema ----------------
+  function lerTema() { try { return localStorage.getItem("biblioteca_tema"); } catch (e) { return null; } }
+  function aplicarTema(v) { if (v === "dark" || v === "light") document.documentElement.setAttribute("data-theme", v); else document.documentElement.removeAttribute("data-theme"); }
+  aplicarTema(lerTema());
+  $("btnTema").addEventListener("click", function () {
+    var a = document.documentElement.getAttribute("data-theme");
+    if (!a) a = (window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    var n = a === "dark" ? "light" : "dark"; aplicarTema(n);
+    try { localStorage.setItem("biblioteca_tema", n); } catch (e) {}
+  });
+  if (!/^https?:/.test($("lnkEstat").getAttribute("href") || "")) $("lnkEstat").hidden = true;
+
+  // ---------------- Estado ----------------
+  var D = null;               // dados vindos do servidor
+  var S = { multi: false, grupo: [], histTodo: {}, mod: "req", turma: null, aluno: null, semana: null, espaco: null, reservas: [], ocupado: false, dataAtiv: null, horaAtiv: "" };
+  var alunoPorId = {}, profPorId = {}, reqPorId = {};
+
+  var ICONES = {
+    "Usar computadores": '<path d="M3 5h18v11H3z"/><path d="M8 20h8M12 16v4"/>',
+    "Estudar": '<path d="M4 5h7a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z"/><path d="M20 5h-7a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h7z"/>',
+    "Jogar": '<rect x="3" y="8" width="18" height="10" rx="4"/><path d="M8 11v4M6 13h4M15.5 12h.01M17.5 14h.01"/>',
+    "Fazer desenhos": '<path d="M4 20l4-1 11-11-3-3L5 16z"/><path d="M14 6l3 3"/>',
+    "Fazer trabalhos de grupo": '<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 19c0-3 3-5 6-5s6 2 6 5M15 14.5c2.5 0 5 1.5 5 4.5"/>',
+    "Conviver na biblioteca": '<path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.4A8 8 0 1 1 21 12z"/>'
+  };
+  function svg(p) { return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg>'; }
+
+  function indexar() {
+    alunoPorId = {}; profPorId = {}; reqPorId = {};
+    D.alunos.forEach(function (a) { alunoPorId[a[0]] = { id: a[0], nome: a[1], turma: a[2], num: a[3] }; });
+    D.professores.forEach(function (p) { profPorId[p[0]] = { id: p[0], nome: p[1] }; });
+    D.requisicoes.forEach(function (r) { reqPorId[r[0]] = r; });
+    catPorTitulo = {}; D.livros = [];
+    (D.catalogo || []).forEach(function (c) { catPorTitulo[c[0].toLowerCase()] = c; D.livros.push(c[0]); });
+  }
+
+  // Situação de uma requisição [id, turma, leitor, livro, dReq, dEnt, prorr, dLim, dDev]
+  function situacao(r) {
+    var ent = r[5], lim = r[7] || r[5], dev = r[8];
+    if (dev) return { tipo: "dev", txt: "Devolvido a " + fmt(dev), atraso: 0 };
+    var atraso = difDias(lim, D.hoje);
+    if (atraso > 0) {
+      var txt = "EM FALTA há " + plural(atraso, "dia", "dias") + " — devia ter entregue a " + fmt(ent) +
+        (r[6] ? " (com prorrogação: " + fmt(lim) + ")" : " (sem prorrogação pedida; com prorrogação seria " + fmt(somaIso(ent, D.diasProrrogacao)) + ")");
+      return { tipo: atraso > 30 ? "grave" : "falta", txt: txt, atraso: atraso };
+    }
+    var faltam = -atraso;
+    return { tipo: faltam <= 2 ? "breve" : "ok", txt: faltam === 0 ? "Dentro do prazo — entregar HOJE (" + fmt(lim) + ")" : "Dentro do prazo — entregar até " + fmt(lim) + " (faltam " + plural(faltam, "dia", "dias") + ")", atraso: 0 };
+  }
+  function titulo(r) { return r[3]; }
+  // Catálogo: [título, autor, n.º de exemplares, registos]
+  var catPorTitulo = {};
+  function emprestados(tit) { var k = tit.toLowerCase(); return D.requisicoes.filter(function (r) { return !r[8] && r[3].toLowerCase() === k; }); }
+  function disponibilidade(tit) {
+    var c = catPorTitulo[tit.toLowerCase()]; if (!c) return null;
+    var fora = emprestados(tit);
+    return { total: c[2], livres: c[2] - fora.length, fora: fora, autor: c[1], registos: c[3] };
+  }
+  function textoDisp(d) { return plural(d.total, "exemplar", "exemplares") + " · " + (d.livres > 0 ? plural(d.livres, "disponível", "disponíveis") : "nenhum disponível"); }
+  function requisicoesDoAluno(id) { return D.requisicoes.filter(function (r) { return r[2] === id; }); }
+  function emFaltaAluno(id) { return requisicoesDoAluno(id).filter(function (r) { return !r[8] && difDias(r[7] || r[5], D.hoje) > 0; }).length; }
+  function alunosDaTurma(t) {
+    return D.alunos.filter(function (a) { return a[2] === t; }).map(function (a) { return alunoPorId[a[0]]; })
+      .sort(function (x, y) { return (Number(x.num) || 999) - (Number(y.num) || 999) || ordNome(x.nome, y.nome); });
+  }
+  function listaAtrasos() {
+    return D.requisicoes.filter(function (r) { return !r[8] && difDias(r[7] || r[5], D.hoje) > 0; });
+  }
+
+  // ---------------- Carregar ----------------
+  function carregar(manterVista, silencioso) {
+    if (!TOKEN) { pedirCodigo(); return Promise.resolve(); }
+    $("erroGeral").hidden = true;
+    if (!manterVista) { $("carregar").hidden = false; $("vista").hidden = true; }
+    return api("getBalcaoDados").then(function (d) {
+      D = d; indexar();
+      if (!S.semana) S.semana = segundaDe(D.hoje);
+      if (!S.espaco && D.espacos.length) S.espaco = D.espacos[0][0];
+      $("carregar").hidden = true; $("vista").hidden = false;
+      $("pesqCaixa").hidden = false; $("btnBloquear").hidden = false;
+      if (S.aluno && !alunoPorId[S.aluno]) S.aluno = null;
+      atualizarContador();
+      desenhar(silencioso);
+    }).catch(function (e) {
+      $("carregar").hidden = true;
+      if (!$("login").hidden || silencioso) return;
+      $("erroGeral").textContent = "Não foi possível ler a folha de cálculo: " + e.message;
+      $("erroGeral").hidden = false;
+    });
+  }
+  function atualizarContador() {
+    var n = listaAtrasos().length, c = $("cntAtraso");
+    c.textContent = n; c.hidden = n === 0;
+  }
+
+  // ---------------- Navegação ----------------
+  document.querySelector(".separadores").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-mod]"); if (!b) return;
+    S.mod = b.getAttribute("data-mod");
+    Array.prototype.forEach.call(document.querySelectorAll(".sep"), function (x) { x.setAttribute("aria-selected", x === b ? "true" : "false"); });
+    S.turma = null; S.aluno = null; S.multi = false; S.grupo = [];
+    desenhar();
+  });
+  $("btnAtualizar").addEventListener("click", function () { carregar(true).then(function () { if (S.mod === "esp") carregarReservas(); toast("Dados atualizados."); }); });
+
+  function desenhar(semSubir) {
+    if (!D) return;
+    if (S.mod === "req") desenharRequisicoes();
+    else if (S.mod === "ativ") desenharAtividade();
+    else if (S.mod === "esp") desenharEspaco();
+    else if (S.mod === "mat") desenharMaterial();
+    else desenharAtrasos();
+    if (!semSubir) window.scrollTo(0, 0);
+  }
+
+  // Atualização automática: de 10 em 10 minutos e quando muda o dia (só se ninguém estiver a meio de um registo).
+  function hojeLocal() { var d = new Date(), p = function (n) { return (n < 10 ? "0" : "") + n; }; return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); }
+  function livreParaAtualizar() {
+    var el = document.activeElement;
+    return !!D && !!TOKEN && !S.ocupado && $("veu").hidden && $("login").hidden &&
+      !(el && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) && !($("fLivro") && $("fLivro").value);
+  }
+  function atualizarSozinho() { if (livreParaAtualizar()) carregar(true, true); }
+  setInterval(atualizarSozinho, 600000);
+  setInterval(function () { if (D && hojeLocal() !== D.hoje) atualizarSozinho(); }, 60000);
+  function abrirAluno(id) {
+    var a = alunoPorId[id]; if (!a) return;
+    S.mod = "req"; S.turma = a.turma; S.aluno = a.id;
+    Array.prototype.forEach.call(document.querySelectorAll(".sep"), function (x) { x.setAttribute("aria-selected", x.getAttribute("data-mod") === "req" ? "true" : "false"); });
+    desenhar();
+  }
+
+  function migalhas(inicio) {
+    var h = '<nav class="migalhas" aria-label="Onde estou">';
+    h += S.turma ? '<button type="button" data-ir="turmas">' + esc(inicio) + '</button>' : '<span class="atual">' + esc(inicio) + '</span>';
+    if (S.turma) {
+      h += '<span class="sepm">›</span>';
+      h += S.aluno ? '<button type="button" data-ir="alunos">Turma ' + esc(S.turma) + '</button>' : '<span class="atual">Turma ' + esc(S.turma) + '</span>';
+    }
+    if (S.aluno) h += '<span class="sepm">›</span><span class="atual">' + esc(alunoPorId[S.aluno].nome) + '</span>';
+    return h + '</nav>';
+  }
+  function ligarMigalhas() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ir]"), function (b) {
+      b.addEventListener("click", function () {
+        if (b.getAttribute("data-ir") === "turmas") { S.turma = null; S.aluno = null; } else { S.aluno = null; }
+        desenhar();
+      });
+    });
+  }
+
+  function grelhaTurmas(comFaltas) {
+    var turmas = D.turmas.slice().sort(ordTurma), porAno = {}, anos = [];
+    turmas.forEach(function (t) { var m = /^(\d+)/.exec(t), a = m ? m[1] : "Outras"; if (!porAno[a]) { porAno[a] = []; anos.push(a); } porAno[a].push(t); });
+    var h = "";
+    anos.forEach(function (a) {
+      h += '<h3 class="ano-titulo">' + (a === "Outras" ? "Outras" : esc(a) + ".º ano") + '</h3><div class="grelha-turmas">';
+      porAno[a].forEach(function (t) {
+        var al = alunosDaTurma(t), falta = 0;
+        if (comFaltas) al.forEach(function (x) { falta += emFaltaAluno(x.id); });
+        h += '<button type="button" class="turma-btn" data-turma="' + esc(t) + '"><b>' + esc(t) + '</b><span>' + plural(al.length, "aluno", "alunos") + '</span>' +
+          (falta ? '<span class="falta">' + plural(falta, "livro em falta", "livros em falta") + '</span>' : '') + '</button>';
+      });
+      h += '</div>';
+    });
+    return h || '<p class="vazio">Não há turmas na folha "Turmas".</p>';
+  }
+  function ligarTurmas() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-turma]"), function (b) {
+      b.addEventListener("click", function () { S.turma = b.getAttribute("data-turma"); S.aluno = null; desenhar(); });
+    });
+  }
+  function listaAlunos(comFaltas) {
+    var al = alunosDaTurma(S.turma);
+    if (!al.length) return '<p class="vazio">Esta turma ainda não tem alunos na folha "Leitores".</p>';
+    return '<div class="lista-alunos">' + al.map(function (a) {
+      var f = comFaltas ? emFaltaAluno(a.id) : 0;
+      var fora = comFaltas ? requisicoesDoAluno(a.id).filter(function (r) { return !r[8]; }).length - f : 0;
+      var sel = !comFaltas && S.multi && S.grupo.indexOf(a.id) >= 0;
+      return '<button type="button" class="aluno-btn' + (f ? ' em-falta' : '') + (sel ? ' sel' : '') + '"' + (sel ? ' aria-pressed="true"' : '') + ' data-aluno="' + esc(a.id) + '"><span class="n">' + esc(a.num) + '</span><span class="nm">' + esc(a.nome) + '</span>' +
+        (f ? '<span class="pill pill-falta">' + plural(f, "em falta", "em falta") + '</span>' : (fora > 0 ? '<span class="pill pill-fora">' + fora + ' em casa</span>' : '')) + '</button>';
+    }).join("") + '</div>';
+  }
+  function ligarAlunos(depois) {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-aluno]"), function (b) {
+      b.addEventListener("click", function () { depois(b.getAttribute("data-aluno")); });
+    });
+  }
+
+  // ---------------- Módulo 1: Requisições ----------------
+  function desenharRequisicoes() {
+    var v = $("vista"), h = migalhas("Turmas");
+    if (!S.turma) {
+      v.innerHTML = h + '<div class="card"><div class="card-cab"><h2>Requisição domiciliária</h2><span class="nota">Escolha a turma</span></div>' + grelhaTurmas(true) + '</div>';
+      ligarMigalhas(); ligarTurmas(); return;
+    }
+    if (!S.aluno) {
+      v.innerHTML = h + '<div class="card"><div class="card-cab"><h2>Turma ' + esc(S.turma) + '</h2><span class="cab-acoes"><span class="nota">Escolha o aluno</span><button class="btn btn-sm" type="button" id="btnNovoAluno">+ Acrescentar aluno</button></span></div>' + listaAlunos(true) + '</div>';
+      ligarMigalhas(); ligarAlunos(function (id) { S.aluno = id; desenhar(); });
+      $("btnNovoAluno").addEventListener("click", function () { janelaAluno(null); }); return;
+    }
+    var a = alunoPorId[S.aluno], rs = requisicoesDoAluno(a.id);
+    var abertas = rs.filter(function (r) { return !r[8]; }).sort(function (x, y) { return situacao(y).atraso - situacao(x).atraso || (x[7] < y[7] ? -1 : 1); });
+    var fechadas = rs.filter(function (r) { return r[8]; }).sort(function (x, y) { return x[8] < y[8] ? 1 : -1; });
+    var nFalta = abertas.filter(function (r) { var s = situacao(r).tipo; return s === "falta" || s === "grave"; }).length;
+
+    var esq = '<div class="card"><div class="card-cab"><h2>' + esc(a.nome) + '</h2><span class="nota">' + esc(a.turma) + (a.num ? ' · n.º ' + esc(a.num) : '') + (/^\d+$/.test(a.id) ? ' · proc. ' + esc(a.id) : '') + ' <button class="btn-lig" type="button" id="btnEditarAluno">Editar</button></span></div>';
+    if (nFalta) esq += '<div class="alerta-aluno">Atenção: ' + plural(nFalta, "livro em falta", "livros em falta") + '.</div>';
+    esq += '<h3>Livros em casa</h3>' + (abertas.length ? abertas.map(cartaoReq).join("") : '<p class="vazio">Não tem livros requisitados.</p>');
+    var todo = !!S.histTodo[a.id];
+    if (fechadas.length) esq += '<details' + (todo ? ' open' : '') + '><summary>Histórico (' + fechadas.length + ' devolvidos' + (todo ? '' : ' nos últimos ' + (D.diasHistorico || 30) + ' dias') + ')</summary>' + fechadas.map(cartaoReq).join("") + '</details>';
+    if (!todo) esq += '<div><button class="btn-lig" type="button" id="btnHistTodo">Ver histórico completo</button></div>';
+    esq += '</div>';
+
+    var opts = D.livros.map(function (t) { return '<option value="' + esc(t) + '">'; }).join("");
+    var dir = '<div class="card"><h2>Nova requisição</h2>' +
+      '<label class="campo"><span class="label-xs">Livro</span><input id="fLivro" list="listaLivros" autocomplete="off" placeholder="Escreva para procurar, ou o título de um livro fora da lista" maxlength="200"><datalist id="listaLivros">' + opts + '</datalist></label>' +
+      '<div class="linha-campos"><label class="campo"><span class="label-xs">Data da requisição</span><input type="date" id="fData" value="' + D.hoje + '" min="' + D.inicioAno + '" max="' + D.hoje + '"></label>' +
+      '<label class="campo"><span class="label-xs">Já devolvido a (só registos antigos)</span><input type="date" id="fDev" min="' + D.inicioAno + '" max="' + D.hoje + '"></label></div>' +
+      '<div class="info-livro" id="fInfo" aria-live="polite"></div>' +
+      '<div class="previsao" id="fPrev"></div>' +
+      '<div><button class="btn btn-pri" type="button" id="btnReq">Registar requisição</button></div>' +
+      '<p class="nota">Prazo: ' + D.diasEmprestimo + ' dias corridos. Pode ser prorrogado até ' + D.maxProrrogacoes + ' vezes, por mais ' + D.diasProrrogacao + ' dias de cada vez. Para registos antigos, mude a data (desde ' + fmt(D.inicioAno) + ').</p></div>';
+
+    v.innerHTML = migalhas("Turmas") + '<div class="ficha">' + esq + dir + '</div>';
+    ligarMigalhas();
+    function prev() {
+      var d = $("fData").value || D.hoje, ent = somaIso(d, D.diasEmprestimo);
+      $("fPrev").innerHTML = 'Entregar até <b>' + fmt(ent) + '</b> · com prorrogação até <b>' + fmt(somaIso(ent, D.diasProrrogacao)) + '</b>';
+    }
+    $("fData").addEventListener("input", prev); prev();
+    function infoLivro() {
+      var t = $("fLivro").value.trim(), el = $("fInfo"), d = t ? disponibilidade(t) : null;
+      el.className = "info-livro" + (d && d.livres <= 0 ? " esgotado" : "");
+      if (!t) el.textContent = "";
+      else if (!d) el.textContent = "Título fora do catálogo: fica registado tal como está escrito.";
+      else el.textContent = (d.autor ? d.autor + " · " : "") + textoDisp(d) + (d.registos ? " · registo " + d.registos : "");
+    }
+    $("fLivro").addEventListener("input", infoLivro);
+    $("btnReq").addEventListener("click", function () {
+      var livro = $("fLivro").value.trim();
+      if (!livro) { toast("Escreva ou escolha o título do livro.", true); $("fLivro").focus(); return; }
+      var gravar = function (btn) {
+        ocupar(btn, api("criarRequisicao", { leitor: a.id, livro: livro, dataReq: $("fData").value || D.hoje, dataDev: $("fDev").value || "" }).then(function (r) {
+          D.requisicoes.push(r); reqPorId[r[0]] = r;
+          fecharJanela(); atualizarContador(); desenhar(); toast("Requisição registada: «" + titulo(r) + "».");
+        }));
+      };
+      if ($("fDev").value && $("fDev").value < ($("fData").value || D.hoje)) { toast("A devolução não pode ser antes da requisição.", true); return; }
+      var avisos = [], dsp = $("fDev").value ? null : disponibilidade(livro);
+      if (nFalta && !$("fDev").value) avisos.push(a.nome + " tem " + plural(nFalta, "livro em falta", "livros em falta") + ".");
+      if (dsp && dsp.livres <= 0) avisos.push((dsp.total === 1 ? "O único exemplar deste livro está requisitado" : "Os " + dsp.total + " exemplares deste livro estão todos requisitados") +
+        " (" + dsp.fora.slice(0, 4).map(function (r) { var x = alunoPorId[r[2]]; return x ? x.nome + ", " + x.turma : r[2]; }).join("; ") + (dsp.fora.length > 4 ? "…" : "") + ").");
+      if (avisos.length) confirmar("Atenção", avisos.join(" ") + " Quer emprestar «" + livro + "» mesmo assim?", "Emprestar mesmo assim", true, gravar);
+      else gravar($("btnReq"));
+    });
+    ligarAcoesReq();
+    $("btnEditarAluno").addEventListener("click", function () { janelaAluno(a); });
+    if ($("btnHistTodo")) $("btnHistTodo").addEventListener("click", function () {
+      ocupar($("btnHistTodo"), api("historicoAluno", a.id).then(function (l) {
+        D.requisicoes = D.requisicoes.filter(function (r) { return r[2] !== a.id; }).concat(l);
+        l.forEach(function (r) { reqPorId[r[0]] = r; });
+        S.histTodo[a.id] = true; desenhar(true);
+      }));
+    });
+  }
+
+  // ---------------- Gerir alunos ----------------
+  function janelaAluno(a) {
+    var turmas = D.turmas.slice().sort(ordTurma).map(function (t) { return '<option' + (t === (a ? a.turma : S.turma) ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join("");
+    abrirJanela('<h2>' + (a ? 'Editar aluno' : 'Acrescentar aluno') + '</h2>' +
+      '<label class="campo"><span class="label-xs">Nome</span><input id="aNome" maxlength="120" value="' + esc(a ? a.nome : "") + '"></label>' +
+      '<div class="linha-campos"><label class="campo"><span class="label-xs">N.º de processo</span><input id="aProc" inputmode="numeric" maxlength="8" value="' + esc(a ? a.id : "") + '"' + (a ? ' disabled' : '') + '></label>' +
+      '<label class="campo"><span class="label-xs">Turma</span><select id="aTurma">' + turmas + '</select></label>' +
+      '<label class="campo"><span class="label-xs">N.º na turma</span><input id="aNum" inputmode="numeric" maxlength="2" value="' + esc(a ? a.num : "") + '"></label></div>' +
+      (a ? '<p class="nota">O número de processo não se altera: é ele que liga o aluno aos livros requisitados.</p>' : '<p class="nota">O número de processo identifica o aluno e não pode repetir-se.</p>') +
+      '<div class="fim">' + (a ? '<button class="btn btn-crit" type="button" id="aSaiu" style="margin-right:auto">Saiu da escola</button>' : '') +
+      '<button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-pri" type="button" id="aOk">Guardar</button></div>');
+    $(a ? "aNome" : "aNome").focus();
+    $("aOk").addEventListener("click", function () {
+      var o = { novo: !a, id: a ? a.id : $("aProc").value.trim(), nome: $("aNome").value.trim(), turma: $("aTurma").value, num: $("aNum").value.trim() };
+      if (o.nome.length < 3) { toast("Escreva o nome do aluno.", true); $("aNome").focus(); return; }
+      if (!a && !/^\d{3,8}$/.test(o.id)) { toast("Escreva o número de processo (só algarismos).", true); $("aProc").focus(); return; }
+      ocupar($("aOk"), api("guardarAluno", o).then(function (l) {
+        D.alunos = D.alunos.filter(function (x) { return x[0] !== l[0]; }); D.alunos.push(l); indexar();
+        S.turma = l[2]; if (a) S.aluno = l[0];
+        fecharJanela(); desenhar(); toast(a ? "Dados do aluno guardados." : l[1] + " acrescentado à turma " + l[2] + ".");
+      }));
+    });
+    if (a) $("aSaiu").addEventListener("click", function () {
+      var b = $("aSaiu");
+      if (b.getAttribute("data-conf") !== "1") { b.setAttribute("data-conf", "1"); b.textContent = "Confirmar: saiu da escola"; return; }
+      ocupar(b, api("retirarAluno", a.id).then(function () {
+        D.alunos = D.alunos.filter(function (x) { return x[0] !== a.id; }); indexar();
+        S.grupo = S.grupo.filter(function (x) { return x !== a.id; }); S.aluno = null;
+        fecharJanela(); desenhar(); toast(a.nome + " deixou de aparecer nas listas.");
+      }));
+    });
+  }
+
+  function cartaoReq(r) {
+    var s = situacao(r);
+    var h = '<div class="req ' + s.tipo + '"><div class="titulo">' + esc(titulo(r)) + (r[6] ? ' <span class="pill pill-prorr">prorrogado' + (r[6] > 1 ? ' ×' + r[6] : '') + '</span>' : '') + '</div>' +
+      '<div class="sit">' + esc(s.txt) + '</div>' +
+      '<div class="datas"><span>Requisitado: ' + fmt(r[4]) + '</span><span>Entrega: ' + fmt(r[5]) + '</span>' +
+      (r[6] ? '<span>Limite (' + plural(r[6], "prorrogação", "prorrogações") + '): ' + fmt(r[7]) + '</span>' : '<span>Com prorrogação: ' + fmt(somaIso(r[5], D.diasProrrogacao)) + '</span>') +
+      (r[8] ? '<span>Devolvido: ' + fmt(r[8]) + '</span>' : '') + '</div>';
+    if (r[8]) {
+      h += '<div class="acts"><button class="btn-lig" type="button" data-andev="' + esc(r[0]) + '">Anular devolução (engano)</button></div>';
+    }
+    if (!r[8]) {
+      h += '<div class="acts">' + ((r[6] || 0) < D.maxProrrogacoes ? '<button class="btn btn-sm" type="button" data-prorr="' + esc(r[0]) + '">' + (r[6] ? (r[6] + 1) + '.ª prorrogação' : 'Prorrogar') + ' +' + D.diasProrrogacao + ' dias</button>' : '') +
+        '<button class="btn btn-sm btn-pri" type="button" data-dev="' + esc(r[0]) + '">Registar devolução</button>' +
+        (r[0].indexOf("REQ-" + D.hoje.slice(2).replace(/-/g, "")) === 0 ? '<button class="btn-lig" type="button" data-anreq="' + esc(r[0]) + '">Anular (engano)</button>' : '') + '</div>';
+    }
+    return h + '</div>';
+  }
+  function substituirReq(r) {
+    for (var i = 0; i < D.requisicoes.length; i++) if (D.requisicoes[i][0] === r[0]) D.requisicoes[i] = r;
+    reqPorId[r[0]] = r;
+  }
+  function ligarAcoesReq() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-andev]"), function (b) {
+      b.addEventListener("click", function () {
+        var r = reqPorId[b.getAttribute("data-andev")];
+        confirmar("Anular devolução", "«" + titulo(r) + "» volta a ficar como requisitado (não devolvido). Confirmar?", "Anular devolução", true, function (btn) {
+          ocupar(btn, api("anularDevolucao", r[0]).then(function (n) { substituirReq(n); fecharJanela(); atualizarContador(); desenhar(); toast("Devolução anulada."); }));
+        });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-anreq]"), function (b) {
+      b.addEventListener("click", function () {
+        var r = reqPorId[b.getAttribute("data-anreq")];
+        confirmar("Anular requisição", "Apagar a requisição de «" + titulo(r) + "» registada hoje por engano?", "Anular requisição", true, function (btn) {
+          ocupar(btn, api("anularRequisicao", r[0]).then(function () {
+            D.requisicoes = D.requisicoes.filter(function (x) { return x[0] !== r[0]; }); delete reqPorId[r[0]];
+            fecharJanela(); atualizarContador(); desenhar(); toast("Requisição anulada.");
+          }));
+        });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-prorr]"), function (b) {
+      b.addEventListener("click", function () {
+        var r = reqPorId[b.getAttribute("data-prorr")];
+        confirmar("Prorrogar requisição", "Prorrogar «" + titulo(r) + "» até " + fmt(somaIso(r[6] ? (r[7] || r[5]) : r[5], D.diasProrrogacao)) + "? É a " + ((r[6] || 0) + 1) + ".ª de " + D.maxProrrogacoes + " prorrogações possíveis.", "Prorrogar", false, function (btn) {
+          ocupar(btn, api("prorrogarRequisicao", r[0]).then(function (n) { substituirReq(n); fecharJanela(); atualizarContador(); desenhar(); toast("Prorrogado até " + fmt(n[7]) + "."); }));
+        });
+      });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-dev]"), function (b) {
+      b.addEventListener("click", function () {
+        var r = reqPorId[b.getAttribute("data-dev")];
+        var minDev = r[4] > D.inicioAno ? r[4] : D.inicioAno;
+        abrirJanela('<h2>Registar devolução</h2><p>«' + esc(titulo(r)) + '»</p>' +
+          '<label class="campo"><span class="label-xs">Data da devolução</span><input type="date" id="dDev" value="' + D.hoje + '" min="' + minDev + '" max="' + D.hoje + '"></label>' +
+          '<p class="nota">Se o livro foi devolvido noutro dia, mude a data.</p>' +
+          '<div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-pri" type="button" id="cOk">Registar devolução</button></div>');
+        $("cOk").addEventListener("click", function () {
+          var d = $("dDev").value || D.hoje;
+          if (d < r[4]) { toast("A devolução não pode ser antes da requisição (" + fmt(r[4]) + ").", true); return; }
+          ocupar($("cOk"), api("registarDevolucao", r[0], d).then(function (n) { substituirReq(n); fecharJanela(); atualizarContador(); desenhar(); toast("Devolução registada (" + fmt(n[8]) + ")."); }));
+        });
+      });
+    });
+  }
+
+  // ---------------- Módulo 2: Atividade ----------------
+  // Data das entradas: hoje, ou um dia anterior para lançar registos antigos.
+  function dataAtiv() { return S.dataAtiv && S.dataAtiv < D.hoje ? S.dataAtiv : D.hoje; }
+  function barraDataAtiv() {
+    var d = dataAtiv(), passado = d !== D.hoje;
+    return '<div class="aviso-data' + (passado ? ' passado' : '') + '"><label for="aData">Data da entrada</label><input type="date" id="aData" value="' + d + '" min="' + D.inicioAno + '" max="' + D.hoje + '">' +
+      (passado ? '<label for="aHora">Hora (opcional)</label><input type="time" id="aHora" value="' + esc(S.horaAtiv) + '"><span>A registar entradas de ' + esc(nomeDia(d)) + '</span><button class="btn btn-sm" type="button" id="aHoje">Voltar a hoje</button>'
+        : '<span class="nota">Para lançar entradas de dias anteriores, mude a data.</span>') + '</div>';
+  }
+  function ligarDataAtiv() {
+    if (!$("aData")) return;
+    $("aData").addEventListener("change", function () { S.dataAtiv = this.value || null; desenhar(true); });
+    if ($("aHora")) $("aHora").addEventListener("change", function () { S.horaAtiv = this.value; });
+    if ($("aHoje")) $("aHoje").addEventListener("click", function () { S.dataAtiv = null; S.horaAtiv = ""; desenhar(true); });
+  }
+  function grupoCard() {
+    if (!S.multi) return "";
+    S.grupo = S.grupo.filter(function (id) { return !!alunoPorId[id]; });
+    return '<div class="card"><div class="card-cab"><h2>Grupo</h2><span class="label-xs">' + plural(S.grupo.length, "aluno", "alunos") + '</span></div>' +
+      (S.grupo.length ? '<div class="grupo-lista">' + S.grupo.map(function (id) { var a = alunoPorId[id];
+        return '<span class="chip">' + esc(a.nome) + ' · ' + esc(a.turma) + '<button type="button" data-tirar="' + esc(id) + '" aria-label="Tirar ' + esc(a.nome) + '">×</button></span>'; }).join("") + '</div>'
+        : '<p class="vazio">Toque nos alunos para os juntar ao grupo. Pode ir a várias turmas.</p>') +
+      '<div><button class="btn btn-pri" type="button" id="btnGrupo"' + (S.grupo.length ? '' : ' disabled') + '>Escolher atividade' + (S.grupo.length ? ' (' + S.grupo.length + ')' : '') + '</button></div></div>';
+  }
+  function ligarGrupo() {
+    var bm = $("btnMulti");
+    if (bm) bm.addEventListener("click", function () { S.multi = !S.multi; if (!S.multi) S.grupo = []; S.aluno = null; desenhar(true); });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-tirar]"), function (b) {
+      b.addEventListener("click", function () { var id = b.getAttribute("data-tirar"); S.grupo = S.grupo.filter(function (x) { return x !== id; }); desenhar(true); });
+    });
+    if ($("btnGrupo")) $("btnGrupo").addEventListener("click", janelaGrupo);
+  }
+  function janelaGrupo() {
+    if (!S.grupo.length) return;
+    abrirJanela('<h2>O que vêm fazer?</h2><p>' + plural(S.grupo.length, "aluno", "alunos") + ': ' + esc(S.grupo.map(function (id) { return alunoPorId[id].nome.split(" ")[0]; }).join(", ")) + '</p>' +
+      '<div class="atividades">' + D.atividades.filter(function (at) { return at !== "Usar computadores"; }).map(function (at) {
+        return '<button type="button" class="ativ-btn" data-gativ="' + esc(at) + '"><span class="ic">' + svg(ICONES[at] || '<circle cx="12" cy="12" r="4"/>') + '</span>' + esc(at) + '</button>'; }).join("") + '</div>' +
+      '<p class="nota">Os computadores registam-se um aluno de cada vez, para escolher o número.</p>' +
+      '<div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button></div>');
+    Array.prototype.forEach.call(document.querySelectorAll("[data-gativ]"), function (b) {
+      b.addEventListener("click", function () {
+        if (S.ocupado) return;
+        var at = b.getAttribute("data-gativ"), n = S.grupo.length;
+        S.ocupado = true;
+        Array.prototype.forEach.call(document.querySelectorAll("#janela button"), function (x) { x.disabled = true; });
+        api("registarPresencas", { leitores: S.grupo.slice(), atividade: at, data: dataAtiv() !== D.hoje ? dataAtiv() : "", hora: dataAtiv() !== D.hoje ? S.horaAtiv : "" }).then(function (l) {
+          l.forEach(function (p) { if (!p[7] || p[7] === D.hoje) D.presencasHoje.push(p); });
+          S.grupo = []; S.multi = false; S.aluno = null; S.turma = null; fecharJanela(); desenhar();
+          toast(plural(n, "entrada registada", "entradas registadas") + " — " + at + ".");
+        }).catch(function (e) { toast(e.message, true); fecharJanela(); }).then(function () { S.ocupado = false; });
+      });
+    });
+  }
+  function desenharAtividade() {
+    var v = $("vista"), hoje = '<div class="lado">' + grupoCard() + pcsCard() + hojeCard() + '</div>';
+    var btnMulti = '<button class="btn btn-sm' + (S.multi ? ' btn-pri' : '') + '" type="button" id="btnMulti">' + (S.multi ? 'Modo grupo ligado — desligar' : 'Registar vários alunos') + '</button>';
+    if (!S.turma) {
+      v.innerHTML = migalhas("Turmas") + barraDataAtiv() + '<div class="ficha"><div class="card"><div class="card-cab"><h2>Entrada na biblioteca</h2><span class="cab-acoes"><span class="nota">Escolha a turma</span>' + btnMulti + '</span></div>' + grelhaTurmas(false) + '</div>' + hoje + '</div>';
+      ligarMigalhas(); ligarTurmas(); ligarGrupo(); ligarDataAtiv(); return;
+    }
+    if (!S.aluno || S.multi) {
+      v.innerHTML = migalhas("Turmas") + barraDataAtiv() + '<div class="ficha"><div class="card"><div class="card-cab"><h2>Turma ' + esc(S.turma) + '</h2><span class="cab-acoes"><span class="nota">' + (S.multi ? 'Toque nos alunos do grupo' : 'Escolha o aluno') + '</span>' + btnMulti + '</span></div>' + listaAlunos(false) + '</div>' + hoje + '</div>';
+      ligarMigalhas(); ligarGrupo(); ligarDataAtiv();
+      ligarAlunos(function (id) {
+        if (!S.multi) { S.aluno = id; desenhar(); return; }
+        var k = S.grupo.indexOf(id); if (k >= 0) S.grupo.splice(k, 1); else S.grupo.push(id);
+        desenhar(true);
+      });
+      return;
+    }
+    var a = alunoPorId[S.aluno];
+    var h = '<div class="card"><div class="card-cab"><h2>O que vem fazer ' + esc(a.nome.split(" ")[0]) + '?</h2><span class="nota">' + esc(a.nome) + ' · ' + esc(a.turma) + '</span></div><div class="atividades">' +
+      D.atividades.map(function (at) { return '<button type="button" class="ativ-btn" data-ativ="' + esc(at) + '"><span class="ic">' + svg(ICONES[at] || '<circle cx="12" cy="12" r="4"/>') + '</span>' + esc(at) + '</button>'; }).join("") + '</div></div>';
+    v.innerHTML = migalhas("Turmas") + barraDataAtiv() + '<div class="ficha">' + h + hoje + '</div>';
+    ligarMigalhas(); ligarDataAtiv();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-ativ]"), function (b) {
+      b.addEventListener("click", function () {
+        if (S.ocupado) return;
+        var at = b.getAttribute("data-ativ");
+        if (at === "Usar computadores") { janelaComputador(a, at); return; }
+        ocupar(b, registarEntrada(a, at, ""));
+      });
+    });
+  }
+  // Presença: [hora, turma, leitor, atividade, computador, id, horaSaida]
+  function pcsEmUso() {
+    var m = {};
+    D.presencasHoje.forEach(function (p) { if (p[4] && !p[6]) m[p[4]] = p; });
+    return m;
+  }
+  function registarEntrada(a, at, pc) {
+    var d = dataAtiv(), passado = d !== D.hoje;
+    return api("registarPresenca", { leitor: a.id, atividade: at, computador: pc, data: passado ? d : "", hora: passado ? S.horaAtiv : "" }).then(function (p) {
+      if (!passado) {
+        if (p[4]) D.presencasHoje.forEach(function (x) { if (x[4] === p[4] && !x[6]) x[6] = p[0]; });
+        D.presencasHoje.push(p);
+      }
+      fecharJanela();
+      toast(a.nome + " — " + at + (p[4] ? " · PC " + p[4] : "") + (passado ? " (registado em " + fmt(d) + ")" : " (" + p[0] + ")")); S.aluno = null; desenhar();
+    });
+  }
+  function janelaComputador(a, at) {
+    var passadoPc = dataAtiv() !== D.hoje, uso = passadoPc ? {} : pcsEmUso(), n = D.numComputadores || 15, h = "";
+    for (var i = 1; i <= n; i++) {
+      var u = uso[String(i)], quem = u && alunoPorId[u[2]];
+      h += '<button type="button" class="pc-btn' + (u ? ' recente' : '') + '" data-pc="' + i + '"><b>' + i + '</b><span>' +
+        (u ? esc(quem ? quem.nome.split(" ")[0] : "em uso") + ' · ' + esc(u[0]) : 'livre') + '</span></button>';
+    }
+    abrirJanela('<h2>Que computador?</h2><p>' + esc(a.nome) + ' · ' + esc(a.turma) + '</p>' +
+      '<div class="pcs">' + h + '</div>' + (passadoPc ? '<p class="nota">Entrada de ' + esc(fmt(dataAtiv())) + ': se não souber o número do computador, carregue em «Sem número».</p><div><button class="btn btn-sm" type="button" id="pcSem">Sem número</button></div>'
+        : '<p class="nota">A amarelo: computadores em uso (nome do aluno e hora de entrada).</p>') +
+      '<div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button></div>');
+    function gravar(pc, b) {
+      if (S.ocupado) return;
+      S.ocupado = true;
+      Array.prototype.forEach.call(document.querySelectorAll("#janela button"), function (x) { x.disabled = true; });
+      b.textContent = "A gravar…";
+      registarEntrada(a, at, pc).catch(function (e) { toast(e.message, true); fecharJanela(); }).then(function () { S.ocupado = false; });
+    }
+    Array.prototype.forEach.call(document.querySelectorAll("[data-pc]"), function (b) {
+      b.addEventListener("click", function () {
+        var pc = b.getAttribute("data-pc"), u = uso[pc];
+        if (!u) { gravar(pc, b.querySelector("span")); return; }
+        var quem = alunoPorId[u[2]];
+        abrirJanela('<h2>O computador ' + esc(pc) + ' está em uso</h2><p>Está com <b>' + esc(quem ? quem.nome : u[2]) + '</b> (' + esc(u[1]) + ') desde as ' + esc(u[0]) + '.</p>' +
+          '<p>Se esse aluno já saiu, pode libertar o computador e atribuí-lo a ' + esc(a.nome) + '.</p>' +
+          '<div class="fim"><button class="btn" type="button" id="pcVoltar">Escolher outro</button><button class="btn btn-pri" type="button" id="pcTroca">Libertar e atribuir</button></div>');
+        $("pcVoltar").addEventListener("click", function () { janelaComputador(a, at); });
+        $("pcTroca").addEventListener("click", function () { gravar(pc, $("pcTroca")); });
+      });
+    });
+    if ($("pcSem")) $("pcSem").addEventListener("click", function () { gravar("", $("pcSem")); });
+  }
+  function pcsCard() {
+    var uso = pcsEmUso(), ks = Object.keys(uso).sort(function (x, y) { return x - y; });
+    var n = D.numComputadores || 15;
+    return '<div class="card"><div class="card-cab"><h2>Computadores</h2><span class="label-xs">' + ks.length + ' em uso · ' + (n - ks.length) + ' livres</span></div>' +
+      (ks.length ? '<div class="pcs-uso">' + ks.map(function (k) {
+        var p = uso[k], a = alunoPorId[p[2]];
+        return '<div><b>PC ' + esc(k) + '</b><span>' + esc(a ? a.nome : p[2]) + ' <span class="nota">· ' + esc(p[1]) + ' · desde ' + esc(p[0]) + '</span></span>' +
+          '<button class="btn btn-sm" type="button" data-libertar="' + esc(p[5]) + '">Libertar</button></div>';
+      }).join("") + '</div>' : '<p class="vazio">Nenhum computador em uso.</p>') + '</div>';
+  }
+  function hojeCard() {
+    var l = D.presencasHoje.slice().reverse();
+    return '<div class="card"><div class="card-cab"><h2>Hoje</h2><span class="label-xs">' + plural(l.length, "entrada", "entradas") + '</span></div>' +
+      (l.length ? '<div class="hoje-lista">' + l.slice(0, 40).map(function (p) {
+        var a = alunoPorId[p[2]];
+        return '<div><span class="num">' + esc(p[0]) + '</span><span>' + esc(p[1]) + '</span><span>' + esc(a ? a.nome : p[2]) + ' · <span class="nota">' + esc(p[3]) +
+          (p[4] ? ' · PC ' + esc(p[4]) + (p[6] ? ' (saiu às ' + esc(p[6]) + ')' : '') : '') + '</span></span>' +
+          (p[5] ? '<button class="btn-lig" type="button" data-anular="' + esc(p[5]) + '">Anular</button>' : '<span></span>') + '</div>';
+      }).join("") + '</div>' : '<p class="vazio">Ainda não há entradas hoje.</p>') + '</div>';
+  }
+  // Botões "Anular" e "Libertar" (a lista é redesenhada muitas vezes, por isso ouvem-se na secção inteira)
+  $("vista").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-anular],[data-libertar]"); if (!b || S.ocupado) return;
+    var idA = b.getAttribute("data-anular"), idL = b.getAttribute("data-libertar");
+    var p = D.presencasHoje.filter(function (x) { return x[5] === (idA || idL); })[0]; if (!p) return;
+    var a = alunoPorId[p[2]], nome = a ? a.nome : p[2];
+    if (idL) {
+      ocupar(b, api("libertarComputador", idL).then(function (hora) { p[6] = hora; desenhar(true); toast("PC " + p[4] + " libertado (" + nome + ")."); }));
+      return;
+    }
+    confirmar("Anular entrada", "Apagar a entrada de " + nome + " — " + p[3] + (p[4] ? " · PC " + p[4] : "") + " (" + p[0] + ")?", "Anular entrada", true, function (btn) {
+      ocupar(btn, api("anularPresenca", idA).then(function () {
+        D.presencasHoje = D.presencasHoje.filter(function (x) { return x[5] !== idA; });
+        fecharJanela(); desenhar(true); toast("Entrada anulada.");
+      }));
+    });
+  });
+
+  // ---------------- Material e jogos ----------------
+  // D.material: [id, nome, tipo, estado] · D.materialFora: [idEmprestimo, turma, leitor, idMaterial, "dd/MM HH:mm"]
+  function matPorId(id) { return D.material.filter(function (m) { return m[0] === id; })[0]; }
+  function nomeMat(m) { return m ? (m[2] + (m[1] ? " " + m[1] : "")) : "Material"; }
+  function matForaCard() {
+    var l = D.materialFora;
+    return '<div class="card"><div class="card-cab"><h2>Emprestado agora</h2><span class="label-xs">' + plural(l.length, "artigo", "artigos") + '</span></div>' +
+      (l.length ? '<div class="pcs-uso">' + l.map(function (e) {
+        var a = alunoPorId[e[2]], m = matPorId(e[3]);
+        return '<div style="grid-template-columns:minmax(0,1fr) auto"><span><b>' + esc(nomeMat(m) || e[3]) + '</b> · ' + esc(a ? a.nome : e[2]) + ' <span class="nota">· ' + esc(a ? a.turma : e[1]) + ' · desde ' + esc(e[4]) + '</span></span>' +
+          '<button class="btn btn-sm" type="button" data-devmat="' + esc(e[0]) + '">Devolver</button></div>';
+      }).join("") + '</div>' : '<p class="vazio">Não há material emprestado.</p>') + '</div>';
+  }
+  function desenharMaterial() {
+    var v = $("vista"), lado = '<div class="lado">' + matForaCard() + '</div>';
+    if (!D.material.length) {
+      v.innerHTML = '<div class="card"><h2>Material e jogos</h2><p class="vazio">A folha «Material» está vazia. Escreva lá uma linha por artigo (código, nome ou número, tipo, estado) e carregue em Atualizar.</p></div>';
+      return;
+    }
+    if (!S.turma) {
+      v.innerHTML = migalhas("Turmas") + '<div class="ficha"><div class="card"><div class="card-cab"><h2>Emprestar material ou jogos</h2><span class="nota">Escolha a turma</span></div>' + grelhaTurmas(false) + '</div>' + lado + '</div>';
+      ligarMigalhas(); ligarTurmas(); ligarMaterial(); return;
+    }
+    if (!S.aluno) {
+      v.innerHTML = migalhas("Turmas") + '<div class="ficha"><div class="card"><div class="card-cab"><h2>Turma ' + esc(S.turma) + '</h2><span class="nota">Escolha o aluno</span></div>' + listaAlunos(false) + '</div>' + lado + '</div>';
+      ligarMigalhas(); ligarAlunos(function (id) { S.aluno = id; desenhar(); }); ligarMaterial(); return;
+    }
+    var a = alunoPorId[S.aluno], foraIds = {}, tipos = {}, ordem = [];
+    D.materialFora.forEach(function (e) { foraIds[e[3]] = alunoPorId[e[2]] ? alunoPorId[e[2]].nome.split(" ")[0] : "emprestado"; });
+    D.material.forEach(function (m) { if (!tipos[m[2]]) { tipos[m[2]] = []; ordem.push(m[2]); } tipos[m[2]].push(m); });
+    var h = '<div class="card"><div class="card-cab"><h2>O que leva ' + esc(a.nome.split(" ")[0]) + '?</h2><span class="nota">' + esc(a.nome) + ' · ' + esc(a.turma) + '</span></div>';
+    ordem.sort(ordNome).forEach(function (t) {
+      h += '<h3>' + esc(t) + '</h3><div class="mat-grupo">' + tipos[t].sort(function (x, y) { return x[1].localeCompare(y[1], "pt", { numeric: true }); }).map(function (m) {
+        var avariado = /avariad|danificad/i.test(m[3]), com = foraIds[m[0]];
+        return '<button type="button" class="mat-btn" data-mat="' + esc(m[0]) + '"' + (avariado || com ? ' disabled' : '') + '>' + esc(m[1] || m[0]) +
+          '<span>' + (avariado ? 'avariado' : (com ? 'com ' + esc(com) : 'disponível')) + '</span></button>';
+      }).join("") + '</div>';
+    });
+    v.innerHTML = migalhas("Turmas") + '<div class="ficha">' + h + '</div>' + lado + '</div>';
+    ligarMigalhas(); ligarMaterial();
+    Array.prototype.forEach.call(document.querySelectorAll("[data-mat]"), function (b) {
+      b.addEventListener("click", function () {
+        if (S.ocupado) return;
+        var m = matPorId(b.getAttribute("data-mat"));
+        ocupar(b, api("emprestarMaterial", { leitor: a.id, material: m[0] }).then(function (e) {
+          D.materialFora.push(e); m[3] = "Emprestado"; S.aluno = null; desenhar(); toast(nomeMat(m) + " emprestado a " + a.nome + ".");
+        }));
+      });
+    });
+  }
+  function ligarMaterial() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-devmat]"), function (b) {
+      b.addEventListener("click", function () {
+        var id = b.getAttribute("data-devmat"), e = D.materialFora.filter(function (x) { return x[0] === id; })[0]; if (!e) return;
+        var a = alunoPorId[e[2]], m = matPorId(e[3]);
+        abrirJanela('<h2>Devolver ' + esc(nomeMat(m)) + '</h2><p>Emprestado a <b>' + esc(a ? a.nome : e[2]) + '</b> desde ' + esc(e[4]) + '.</p>' +
+          '<label class="campo"><span class="label-xs">Se veio com problema, escreva qual</span><textarea id="mObs" maxlength="300" placeholder="Só é preciso se houver problema"></textarea></label>' +
+          '<div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-crit" type="button" id="mMau">Devolvido com problema</button><button class="btn btn-pri" type="button" id="mBom">Devolvido em bom estado</button></div>');
+        function devolver(btn, problema) {
+          var obs = $("mObs").value.trim();
+          if (problema && !obs) { toast("Escreva qual é o problema.", true); $("mObs").focus(); return; }
+          ocupar(btn, api("devolverMaterial", id, { problema: problema, obs: obs }).then(function (r) {
+            D.materialFora = D.materialFora.filter(function (x) { return x[0] !== id; });
+            if (m) m[3] = r[1];
+            fecharJanela(); desenhar(true); toast(problema ? "Devolvido e marcado como avariado." : "Material devolvido.");
+          }));
+        }
+        $("mBom").addEventListener("click", function () { devolver($("mBom"), false); });
+        $("mMau").addEventListener("click", function () { devolver($("mMau"), true); });
+      });
+    });
+  }
+
+  // ---------------- Módulo 3: Espaço ----------------
+  function carregarReservas() {
+    return api("getReservasSemana", S.semana).then(function (l) { S.reservas = l; if (S.mod === "esp") desenharEspaco(true); })
+      .catch(function (e) { toast(e.message, true); });
+  }
+  function desenharEspaco(jaCarregado) {
+    var v = $("vista"), dias = [0, 1, 2, 3, 4].map(function (i) { return somaIso(S.semana, i); });
+    var nomesDias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+    var espSel = D.espacos.length > 1 ? '<label class="campo"><span class="label-xs">Espaço</span><select id="fEsp">' + D.espacos.map(function (e) { return '<option value="' + esc(e[0]) + '"' + (e[0] === S.espaco ? ' selected' : '') + '>' + esc(e[1]) + '</option>'; }).join("") + '</select></label>' : '';
+    var h = '<div class="card"><div class="semana-ctl"><span class="titulo-sem">Semana de ' + fmt(dias[0]) + ' a ' + fmt(dias[4]) + '</span>' + espSel +
+      '<button class="btn" type="button" id="semAnt">‹ Anterior</button><button class="btn" type="button" id="semHoje">Esta semana</button><button class="btn" type="button" id="semSeg">Seguinte ›</button></div>' +
+      '<p class="nota">Horário da biblioteca: 8h15 às 18h00. Toque num tempo livre para o reservar; toque numa reserva para ver ou cancelar. Nos dias que já passaram, «Registar» serve para lançar usos antigos do espaço.</p>' +
+      '<div class="tabela-wrap"><table class="grelha"><colgroup><col class="ct"><col><col><col><col><col></colgroup><thead><tr><th></th>' +
+      dias.map(function (d, i) { return '<th class="' + (d === D.hoje ? 'hoje' : '') + '">' + nomesDias[i] + '<br><span class="num">' + fmtCurto(d) + '</span></th>'; }).join("") + '</tr></thead><tbody>';
+    D.tempos.forEach(function (t) {
+      h += '<tr><td class="t"><b>' + esc(t[1]) + '</b>' + esc(t[2]) + '–' + esc(t[3]) + '</td>';
+      dias.forEach(function (d) {
+        var res = S.reservas.filter(function (r) { return r[1] === d && r[2] === t[0] && (!S.espaco || r[3] === S.espaco || !r[3]); })[0];
+        var passado = d < D.hoje;
+        if (res) {
+          var p = profPorId[res[4]];
+          h += '<td><button type="button" class="cel ocupada' + (passado ? ' passado' : '') + '" data-res="' + esc(res[0]) + '"><b>' + esc(p ? p.nome : res[4]) + (res[5] ? ' · ' + esc(res[5]) : '') + '</b><span>' + esc(res[6]) + '</span></button></td>';
+        } else {
+          var antes = d < D.inicioAno;
+          h += '<td><button type="button" class="cel' + (passado ? ' passado-livre' : '') + '"' + (antes ? ' disabled' : '') + ' data-livre="' + d + '|' + esc(t[0]) + '">' + (antes ? '' : passado ? 'Registar' : 'Livre') + '</button></td>';
+        }
+      });
+      h += '</tr>';
+    });
+    h += '</tbody></table></div></div>';
+    v.innerHTML = h;
+    $("semAnt").addEventListener("click", function () { S.semana = somaIso(S.semana, -7); S.reservas = []; desenharEspaco(); });
+    $("semSeg").addEventListener("click", function () { S.semana = somaIso(S.semana, 7); S.reservas = []; desenharEspaco(); });
+    $("semHoje").addEventListener("click", function () { S.semana = segundaDe(D.hoje); S.reservas = []; desenharEspaco(); });
+    if ($("fEsp")) $("fEsp").addEventListener("change", function () { S.espaco = this.value; desenharEspaco(true); });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-livre]"), function (b) {
+      b.addEventListener("click", function () { var x = b.getAttribute("data-livre").split("|"); janelaReserva(x[0], x[1]); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-res]"), function (b) {
+      b.addEventListener("click", function () { janelaVerReserva(b.getAttribute("data-res")); });
+    });
+    if (!jaCarregado) carregarReservas();
+  }
+  function nomeTempo(id) { var t = D.tempos.filter(function (x) { return x[0] === id; })[0]; return t ? t[1] + " (" + t[2] + "–" + t[3] + ")" : id; }
+  function nomeDia(iso) { return ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"][diaSemana(iso)] + ", " + fmt(iso); }
+  function janelaReserva(data, tempo) {
+    var profs = D.professores.map(function (p) { return '<option value="' + esc(p[0]) + '">' + esc(p[1]) + '</option>'; }).join("");
+    var turmas = D.turmas.slice().sort(ordTurma).map(function (t) { return '<option>' + esc(t) + '</option>'; }).join("");
+    abrirJanela('<h2>' + (data < D.hoje ? 'Registar uso passado do espaço' : 'Reservar o espaço') + '</h2><p><b>' + esc(nomeDia(data)) + '</b> · ' + esc(nomeTempo(tempo)) + '</p>' +
+      '<label class="campo"><span class="label-xs">Professor</span><select id="rProf"><option value="">— escolha —</option>' + profs + '</select></label>' +
+      '<label class="campo"><span class="label-xs">Turma (opcional)</span><select id="rTurma"><option value="">—</option>' + turmas + '</select></label>' +
+      '<label class="campo"><span class="label-xs">O que vão fazer / tipo de atividade</span><textarea id="rFin" maxlength="500"></textarea></label>' +
+      '<label class="campo"><span class="label-xs">Repetir</span><select id="rRep"><option value="1">Só neste dia</option><option value="4">Todas as semanas, durante 4 semanas</option><option value="8">Todas as semanas, durante 8 semanas</option><option value="12">Todas as semanas, durante 12 semanas</option><option value="20">Todas as semanas, durante 20 semanas</option><option value="36">Todas as semanas, durante 36 semanas (ano letivo)</option></select></label>' +
+      '<div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn btn-pri" type="button" id="rOk">Reservar</button></div>');
+    $("rProf").focus();
+    $("rOk").addEventListener("click", function () {
+      var o = { data: data, tempo: tempo, espaco: S.espaco || "", professor: $("rProf").value, turma: $("rTurma").value, finalidade: $("rFin").value.trim(), semanas: $("rRep").value };
+      if (!o.professor) { toast("Escolha o professor.", true); return; }
+      if (!o.finalidade) { toast("Escreva o que vão fazer.", true); $("rFin").focus(); return; }
+      ocupar($("rOk"), api("criarReserva", o).then(function (res) {
+        var fimSem = somaIso(S.semana, 6);
+        res.criadas.forEach(function (r) { if (r[1] >= S.semana && r[1] <= fimSem) S.reservas.push(r); });
+        fecharJanela(); desenharEspaco(true);
+        var msg = res.criadas.length === 1 ? "Reserva registada." : res.criadas.length + " reservas registadas (uma por semana).";
+        if (res.ocupadas.length) msg += " Já estava ocupado em: " + res.ocupadas.map(fmtCurto).join(", ") + ".";
+        toast(msg, res.ocupadas.length > 0);
+      })
+        .catch(function (e) { carregarReservas(); throw e; }));
+    });
+  }
+  function janelaVerReserva(id) {
+    var r = S.reservas.filter(function (x) { return x[0] === id; })[0]; if (!r) return;
+    var p = profPorId[r[4]];
+    abrirJanela('<h2>Reserva</h2><p><b>' + esc(nomeDia(r[1])) + '</b> · ' + esc(nomeTempo(r[2])) + '</p>' +
+      '<p><span class="label-xs">Professor</span><br>' + esc(p ? p.nome : r[4]) + (r[5] ? ' · turma ' + esc(r[5]) : '') + '</p>' +
+      '<p><span class="label-xs">Atividade</span><br>' + esc(r[6]) + '</p>' +
+      (r[7] ? '<p class="nota">Esta reserva repete-se todas as semanas.</p>' : '') +
+      '<label class="campo"><span class="label-xs">Para cancelar: quem está a cancelar?</span><input id="rQuem" maxlength="80" placeholder="Nome de quem cancela"></label>' +
+      '<div class="fim"><button class="btn" type="button" data-fechar>Fechar</button>' +
+      (r[7] ? '<button class="btn btn-crit" type="button" id="rDelSeg">Cancelar esta e as seguintes</button>' : '') +
+      '<button class="btn btn-crit" type="button" id="rDel">' + (r[7] ? 'Cancelar só esta' : 'Cancelar reserva') + '</button></div>');
+    function cancelar(b, seguintes) {
+      var quem = $("rQuem").value.trim();
+      if (!quem) { toast("Escreva o nome de quem está a cancelar.", true); $("rQuem").focus(); return; }
+      ocupar(b, api("apagarReserva", id, quem, seguintes).then(function (ids) {
+        S.reservas = S.reservas.filter(function (x) { return ids.indexOf(x[0]) < 0; }); fecharJanela(); desenharEspaco(true);
+        toast(ids.length > 1 ? ids.length + " reservas canceladas." : "Reserva cancelada.");
+      }));
+    }
+    $("rDel").addEventListener("click", function () { cancelar($("rDel"), false); });
+    if ($("rDelSeg")) $("rDelSeg").addEventListener("click", function () { cancelar($("rDelSeg"), true); });
+  }
+
+  // ---------------- Em atraso ----------------
+  function desenharAtrasos() {
+    var l = listaAtrasos(), v = $("vista");
+    if (!l.length) { v.innerHTML = '<div class="card"><h2>Livros em atraso</h2><p class="vazio">Não há livros em atraso. 👍</p></div>'; return; }
+    var grupos = {};
+    l.forEach(function (r) { var a = alunoPorId[r[2]], t = a ? a.turma : r[1]; (grupos[t] = grupos[t] || []).push(r); });
+    var h = '<div class="card"><div class="card-cab"><h2>Livros em atraso</h2><span class="label-xs">' + plural(l.length, "livro", "livros") + ' · toque numa linha para abrir o aluno</span></div><div style="overflow-x:auto"><table class="tab"><thead><tr><th class="n">N.º</th><th>Aluno</th><th>Livro</th><th>Devia entregar</th><th class="n">Dias</th><th>Estado</th></tr></thead><tbody>';
+    Object.keys(grupos).sort(ordTurma).forEach(function (t) {
+      var it = grupos[t].sort(function (x, y) { return situacao(y).atraso - situacao(x).atraso; });
+      h += '<tr class="sub"><td colspan="4">Turma ' + esc(t) + '</td><td colspan="2" class="n">' + plural(it.length, "livro", "livros") + '</td></tr>';
+      it.forEach(function (r) {
+        var a = alunoPorId[r[2]], s = situacao(r);
+        h += '<tr class="clic" data-abrir="' + esc(r[2]) + '"><td class="n">' + esc(a ? a.num : "") + '</td><td><strong>' + esc(a ? a.nome : r[2]) + '</strong></td><td>' + esc(titulo(r)) +
+          (r[6] ? ' <span class="pill pill-prorr">prorrogado</span>' : '') + '</td><td class="num">' + fmt(r[7] || r[5]) + '</td><td class="n"><strong>' + s.atraso + '</strong></td><td>' +
+          (s.atraso > 30 ? '<span class="pill pill-falta">Mais de 30 dias</span>' : '<span class="pill" style="background:var(--crit-soft);color:var(--crit)">Atrasado</span>') + '</td></tr>';
+      });
+    });
+    v.innerHTML = h + '</tbody></table></div></div>';
+    Array.prototype.forEach.call(document.querySelectorAll("[data-abrir]"), function (tr) {
+      tr.addEventListener("click", function () {
+        abrirAluno(tr.getAttribute("data-abrir"));
+      });
+    });
+  }
+
+  // ---------------- Janela, confirmação e botões ocupados ----------------
+  function abrirJanela(html) {
+    $("janela").innerHTML = html; $("veu").hidden = false;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-fechar]"), function (b) { b.addEventListener("click", fecharJanela); });
+  }
+  function fecharJanela() { $("veu").hidden = true; $("janela").innerHTML = ""; }
+  $("veu").addEventListener("click", function (ev) { if (ev.target === $("veu")) fecharJanela(); });
+  document.addEventListener("keydown", function (ev) { if (ev.key === "Escape" && !$("veu").hidden) fecharJanela(); });
+  function confirmar(titulo, texto, rotulo, perigo, acao) {
+    abrirJanela('<h2>' + esc(titulo) + '</h2><p>' + esc(texto) + '</p><div class="fim"><button class="btn" type="button" data-fechar>Cancelar</button><button class="btn ' + (perigo ? 'btn-crit' : 'btn-pri') + '" type="button" id="cOk">' + esc(rotulo) + '</button></div>');
+    $("cOk").addEventListener("click", function () { acao($("cOk")); });
+  }
+  function ocupar(btn, promessa) {
+    S.ocupado = true; var txt = btn.innerHTML; btn.disabled = true;
+    if (btn.classList.contains("btn")) btn.textContent = "A gravar…";
+    return promessa.catch(function (e) { toast(e.message, true); }).then(function () { S.ocupado = false; if (document.body.contains(btn)) { btn.disabled = false; btn.innerHTML = txt; } });
+  }
+
+  // ---------------- Pesquisa ----------------
+  function semAcentos(t) { return String(t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); }
+  function fecharPesquisa() { $("pesqRes").hidden = true; $("pesqRes").innerHTML = ""; }
+  function pesquisar() {
+    var q = semAcentos($("pesq").value.trim()), res = $("pesqRes");
+    if (!D || q.length < 2) { fecharPesquisa(); return; }
+    var palavras = q.split(/\s+/), bate = function (t) { var x = semAcentos(t); return palavras.every(function (p) { return x.indexOf(p) >= 0; }); };
+    var h = "";
+    var al = D.alunos.filter(function (a) { return bate(a[1]) || String(a[0]).indexOf(q) === 0; }).slice(0, 8);
+    if (al.length) {
+      h += '<div class="grupo">Alunos</div>' + al.map(function (a) {
+        var f = emFaltaAluno(a[0]), casa = requisicoesDoAluno(a[0]).filter(function (r) { return !r[8]; }).length;
+        return '<button type="button" data-ir-aluno="' + esc(a[0]) + '"><b>' + esc(a[1]) + '</b> · ' + esc(a[2]) + (a[3] ? ' · n.º ' + esc(a[3]) : '') +
+          '<span class="sec' + (f ? ' falta' : '') + '">' + (/^\d+$/.test(a[0]) ? 'proc. ' + esc(a[0]) + ' · ' : '') +
+          (f ? plural(f, "livro em falta", "livros em falta") : (casa ? plural(casa, "livro em casa", "livros em casa") : "sem livros requisitados")) + '</span></button>';
+      }).join("");
+    }
+    var emp = D.requisicoes.filter(function (r) { return !r[8] && bate(titulo(r)); }).slice(0, 8), vistos = {};
+    if (emp.length) {
+      h += '<div class="grupo">Livros requisitados — quem os tem</div>' + emp.map(function (r) {
+        var a = alunoPorId[r[2]], st = situacao(r);
+        return '<button type="button" data-ir-aluno="' + esc(r[2]) + '"><b>' + esc(titulo(r)) + '</b><span class="sec' + (st.atraso ? ' falta' : '') + '">com ' +
+          esc(a ? a.nome + " (" + a.turma + ")" : r[2]) + ' · ' + (st.atraso ? 'em falta há ' + plural(st.atraso, "dia", "dias") : 'entrega até ' + fmt(r[7] || r[5])) + '</span></button>';
+      }).join("");
+    }
+    var cat = D.livros.filter(bate).slice(0, 8);
+    if (cat.length) h += '<div class="grupo">Catálogo</div>' + cat.map(function (t) {
+      var d = disponibilidade(t);
+      return '<div class="item"><b>' + esc(t) + '</b><span class="sec' + (d.livres <= 0 ? ' falta' : '') + '">' + (d.autor ? esc(d.autor) + ' · ' : '') + textoDisp(d) + (d.registos ? ' · registo ' + esc(d.registos) : '') + '</span></div>';
+    }).join("");
+    res.innerHTML = h || '<div class="item">Nada encontrado.</div>'; res.hidden = false;
+  }
+  $("pesq").addEventListener("input", pesquisar);
+  $("pesq").addEventListener("focus", pesquisar);
+  $("pesq").addEventListener("keydown", function (ev) {
+    if (ev.key === "Escape") { $("pesq").value = ""; fecharPesquisa(); }
+    if (ev.key === "Enter") { var p = $("pesqRes").querySelector("[data-ir-aluno]"); if (p) p.click(); }
+  });
+  $("pesqRes").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-ir-aluno]"); if (!b) return;
+    $("pesq").value = ""; fecharPesquisa(); $("pesq").blur(); abrirAluno(b.getAttribute("data-ir-aluno"));
+  });
+  document.addEventListener("click", function (ev) { if (!ev.target.closest("#pesqCaixa")) fecharPesquisa(); });
+
+  carregar();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<base target="_top">
+<title>Biblioteca Escolar — EB D. Fernando II</title>
+<!--
+  Index.html — Painel de estatísticas da Biblioteca Escolar (Google Apps Script)
+  Colar num ficheiro HTML chamado "Index" no mesmo projeto do Code.gs.
+  Powered by Claude IA & Ideias&Soltas — concepção de produtos multimédia
+-->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Public+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+<style>
+/* ==================== CORES ==================== */
+:root {
+  --bg:#f4f6f9; --surface:#ffffff; --surface-2:#edf1f6; --line:#dde3eb; --line-2:#c9d2de;
+  --fg:#161c24; --fg-2:#4a5566; --fg-3:#737f8f;
+  --accent:#1e4e8c; --accent-hover:#173e70; --accent-fg:#ffffff; --accent-soft:#e6eef8;
+  --track:#e7ecf2;
+  --ok:#0f7a37; --ok-soft:#e3f3e8; --warn:#8a5a00; --warn-soft:#fff3d6; --crit:#b3261e; --crit-soft:#fde8e6; --crit-fg:#ffffff;
+  --shadow:0 1px 2px rgba(22,28,36,.06),0 4px 16px rgba(22,28,36,.06);
+  --r:10px; --r-sm:6px; --gutter:clamp(16px,3vw,32px);
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+    --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+    --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+    --track:#2a333f;
+    --ok:#6fd08f; --ok-soft:#1b3325; --warn:#f3c562; --warn-soft:#3a2f14; --crit:#ff8a80; --crit-soft:#3d1f1d; --crit-fg:#2a0d0b;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg:#12161c; --surface:#1a2029; --surface-2:#232b36; --line:#333d4a; --line-2:#434e5d;
+  --fg:#eef2f7; --fg-2:#c0c9d4; --fg-3:#8a96a5;
+  --accent:#8db8ee; --accent-hover:#a9caf3; --accent-fg:#0d1f36; --accent-soft:#1f2f45;
+  --track:#2a333f;
+  --ok:#6fd08f; --ok-soft:#1b3325; --warn:#f3c562; --warn-soft:#3a2f14; --crit:#ff8a80; --crit-soft:#3d1f1d; --crit-fg:#2a0d0b;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+/* ==================== BASE ==================== */
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font:400 14px/1.5 "Public Sans",-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg); color:var(--fg); -webkit-font-smoothing:antialiased; }
+h1, h2, h3, .bricolage { font-family:"Bricolage Grotesque","Segoe UI",sans-serif; font-weight:700; letter-spacing:-.02em; }
+.num { font-variant-numeric:tabular-nums; }
+.label-xs { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--fg-3); }
+:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+button, select, input { font:inherit; color:inherit; }
+[hidden] { display:none !important; }
+
+/* ==================== BARRA E SEPARADORES ==================== */
+.barra { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--line); }
+.barra-in { max-width:1280px; margin:0 auto; padding:10px var(--gutter) 0; display:flex; flex-direction:column; gap:6px; }
+.barra-topo { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+.marca { display:flex; align-items:baseline; gap:10px; min-width:0; }
+.marca b { font-family:"Bricolage Grotesque",sans-serif; font-size:22px; letter-spacing:-.02em; color:var(--accent); }
+.marca span { font-size:13px; color:var(--fg-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.acoes { display:flex; align-items:center; gap:8px; }
+.btn { font-size:13px; font-weight:500; padding:7px 12px; border-radius:var(--r-sm); border:1px solid var(--line-2); background:var(--surface); color:var(--fg); cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+.btn:hover { background:var(--surface-2); }
+.btn-pri { background:var(--accent); border-color:var(--accent); color:var(--accent-fg); }
+.btn-pri:hover { background:var(--accent-hover); border-color:var(--accent-hover); }
+.separadores { display:flex; gap:2px; overflow-x:auto; scrollbar-width:none; }
+.sep { font-size:13px; font-weight:600; padding:10px 14px; background:none; border:0; border-bottom:2px solid transparent; color:var(--fg-2); cursor:pointer; white-space:nowrap; }
+.sep:hover { color:var(--fg); }
+.sep[aria-selected="true"] { color:var(--accent); border-bottom-color:var(--accent); }
+
+/* ==================== CONTEÚDO ==================== */
+main { max-width:1280px; margin:0 auto; padding:20px var(--gutter) 64px; display:flex; flex-direction:column; gap:16px; }
+.filtros { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; }
+.campo { display:flex; flex-direction:column; gap:4px; min-width:0; }
+.campo select, .campo input { font-size:13px; padding:7px 10px; border-radius:var(--r-sm); border:1px solid var(--line-2); background:var(--surface); color:var(--fg); min-width:170px; }
+.estado { font-size:12px; color:var(--fg-3); padding-bottom:8px; margin-left:auto; }
+.aviso-erro { display:none; background:var(--crit-soft); border:1px solid var(--crit); color:var(--crit); padding:12px 16px; border-radius:var(--r-sm); font-size:13px; font-weight:500; }
+
+/* Cartões-contador */
+.tiles { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; }
+.tile { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:14px 16px; display:flex; flex-direction:column; gap:4px; min-width:0; }
+.tile-rot { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:600; color:var(--fg-2); }
+.ponto { width:8px; height:8px; border-radius:50%; background:var(--accent); flex:none; }
+.tile-val { font-family:"Bricolage Grotesque",sans-serif; font-size:34px; font-weight:700; letter-spacing:-.02em; line-height:1.05; font-variant-numeric:tabular-nums; }
+.tile-sub { font-size:12px; color:var(--fg-3); }
+.tile.crit { background:var(--crit-soft); border-color:transparent; }
+.tile.crit .tile-val { color:var(--crit); }
+.tile.crit .ponto { background:var(--crit); }
+
+/* Mini-contadores */
+.minis { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.mini { background:var(--surface-2); border-radius:var(--r-sm); padding:10px 14px; }
+.mini-val { font-family:"Bricolage Grotesque",sans-serif; font-size:22px; font-weight:700; font-variant-numeric:tabular-nums; }
+
+/* Cartões e grelha */
+.grelha { display:grid; grid-template-columns:minmax(0,5fr) minmax(0,6fr); gap:16px; align-items:start; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:16px; display:flex; flex-direction:column; gap:12px; min-width:0; }
+.card-cab { display:flex; justify-content:space-between; align-items:baseline; gap:8px; flex-wrap:wrap; }
+.card-cab h2 { font-size:17px; }
+.nota { font-size:12px; color:var(--fg-3); }
+.vazio { color:var(--fg-3); font-size:13px; padding:6px 0; }
+
+/* Barras em CSS */
+.barras { display:flex; flex-direction:column; gap:8px; }
+.linha-barra { display:grid; grid-template-columns:minmax(0,1fr) 40px minmax(60px,38%) 44px; align-items:center; gap:10px; font-size:13px; }
+.lb-nome { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.lb-val { text-align:right; font-weight:700; font-variant-numeric:tabular-nums; }
+.lb-pista { height:10px; background:var(--track); border-radius:0 4px 4px 0; overflow:hidden; }
+.lb-pista span { display:block; height:100%; background:var(--accent); border-radius:0 4px 4px 0; }
+.lb-pct { text-align:right; font-size:12px; color:var(--fg-2); font-variant-numeric:tabular-nums; }
+
+/* Tabelas */
+.tabela-wrap { overflow-x:auto; }
+table.tab { width:100%; border-collapse:collapse; font-size:13px; }
+.tab th { text-align:left; font-size:11px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--fg-3); padding:7px 8px; border-bottom:1px solid var(--line-2); white-space:nowrap; }
+.tab td { padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:middle; }
+.tab .n { text-align:right; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.tab tr.sub td { background:var(--surface-2); font-weight:600; border-top:1px solid var(--line-2); }
+.tab tr.total td { font-weight:700; border-top:2px solid var(--line-2); border-bottom:0; }
+.fraco { color:var(--fg-3); font-weight:400; }
+
+/* Etiquetas */
+.pill { display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; white-space:nowrap; }
+.pill-30 { background:var(--crit); color:var(--crit-fg); }
+.pill-atraso { background:var(--crit-soft); color:var(--crit); }
+.pill-prorr { background:var(--surface-2); color:var(--fg-2); font-weight:600; margin-left:6px; }
+
+footer { max-width:1280px; margin:0 auto; padding:0 var(--gutter) 32px; text-align:center; font-size:12px; color:var(--fg-3); }
+.so-impressao { display:none; }
+
+/* ==================== ECRÃS MAIS PEQUENOS ==================== */
+@media (max-width:1100px) {
+  .tiles { grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .minis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .grelha { grid-template-columns:minmax(0,1fr); }
+}
+@media (max-width:760px) {
+  .tiles { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .tiles .tile:first-child { grid-column:1 / -1; }
+  .marca span { display:none; }
+  .campo { flex:1 1 140px; }
+  .campo select, .campo input { min-width:0; width:100%; }
+  .estado { margin-left:0; width:100%; padding-bottom:0; }
+  .linha-barra { grid-template-columns:minmax(0,1fr) 32px 64px 40px; gap:6px; }
+}
+
+/* ==================== IMPRESSÃO A4 ==================== */
+@page { size:A4; margin:14mm; }
+@media print {
+  :root, :root[data-theme="dark"], :root:not([data-theme="light"]) {
+    --bg:#fff !important; --surface:#fff !important; --surface-2:#f2f2f2 !important;
+    --line:#cccccc !important; --line-2:#999999 !important;
+    --fg:#000 !important; --fg-2:#222 !important; --fg-3:#555 !important;
+    --accent:#333 !important; --track:#e6e6e6 !important;
+    --crit:#000 !important; --crit-soft:#fff !important; --crit-fg:#fff !important;
+    --warn:#000 !important; --warn-soft:#fff !important;
+    color-scheme: light;
+  }
+  body { background:#fff !important; color:#000 !important; font-size:12px; }
+  .barra, .filtros, footer, .btn { display:none !important; }
+  .so-impressao { display:block !important; border-bottom:2px solid #000; padding-bottom:8px; }
+  .so-impressao h1 { font-size:16px; }
+  .so-impressao p { font-size:12px; color:#333; }
+  main { padding:0 !important; max-width:none !important; gap:12px !important; }
+  .painel-sep { display:block !important; }
+  .painel-sep + .painel-sep { margin-top:12px; }
+  .card, .tile { border:1px solid #999 !important; box-shadow:none !important; break-inside:avoid; page-break-inside:avoid; }
+  .tile.crit { background:#fff !important; }
+  .mini { border:1px solid #bbb; background:#fff !important; }
+  .tiles { grid-template-columns:repeat(5,minmax(0,1fr)) !important; }
+  .tiles .tile:first-child { grid-column:auto !important; }
+  .minis { grid-template-columns:repeat(4,minmax(0,1fr)) !important; }
+  .grelha { grid-template-columns:1fr 1fr !important; }
+  .linha-barra { grid-template-columns:minmax(0,1.6fr) 28px minmax(40px,1fr) 34px !important; gap:6px !important; font-size:11px; }
+  .lb-nome { white-space:normal !important; }
+  .lb-pista span { background:#444 !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .pill { border:1px solid #000; background:#fff !important; color:#000 !important; }
+  .pill-30 { background:#000 !important; color:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  .tab tr { break-inside:avoid; }
+}
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra-in">
+    <div class="barra-topo">
+      <div class="marca"><b>Biblioteca</b><span>EB D. Fernando II · 2026/2027</span></div>
+      <div class="acoes">
+        <button class="btn" type="button" id="btnTema" title="Mudar entre tema claro e escuro">Tema</button>
+        <button class="btn" type="button" id="btnAtualizar" title="Ler de novo os dados">Atualizar</button>
+        <button class="btn btn-pri" type="button" id="btnImprimir" title="Imprimir o relatório em A4">Imprimir</button>
+      </div>
+    </div>
+    <nav class="separadores" role="tablist" aria-label="Secções">
+      <button class="sep" type="button" role="tab" data-sep="painel" aria-selected="true">Painel</button>
+      <button class="sep" type="button" role="tab" data-sep="atrasos" aria-selected="false">Livros em atraso</button>
+      <button class="sep" type="button" role="tab" data-sep="presencas" aria-selected="false">Presenças</button>
+      <button class="sep" type="button" role="tab" data-sep="material" aria-selected="false">Material e espaços</button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- Cabeçalho que só aparece na impressão -->
+  <div class="so-impressao">
+    <h1 id="impTitulo">Biblioteca Escolar — EB D. Fernando II · Relatório semanal</h1>
+    <p id="impSub"></p>
+  </div>
+
+  <!-- Filtros -->
+  <section class="filtros" aria-label="Período">
+    <label class="campo" for="fPeriodo"><span class="label-xs">Período</span>
+      <select id="fPeriodo">
+        <option value="esta_semana" selected>Esta semana (segunda a domingo)</option>
+        <option value="este_mes">Este mês</option>
+        <option value="ano_letivo">Ano letivo</option>
+        <option value="personalizado">Intervalo de datas…</option>
+      </select>
+    </label>
+    <label class="campo" for="fInicio" id="blocoInicio" hidden><span class="label-xs">De</span><input type="date" id="fInicio"></label>
+    <label class="campo" for="fFim" id="blocoFim" hidden><span class="label-xs">Até</span><input type="date" id="fFim"></label>
+    <span class="estado" id="estado" role="status" aria-live="polite">A carregar…</span>
+  </section>
+
+  <div class="aviso-erro" id="avisoErro" role="alert"></div>
+  <div id="login" style="display:none; max-width:380px; margin:6vh auto; background:var(--surface); border:1px solid var(--line); border-radius:10px; padding:20px;">
+    <h2 style="margin-bottom:8px;">Código de acesso</h2>
+    <p style="font-size:13px; color:var(--fg-3); margin-bottom:12px;">Estas estatísticas são só para a equipa da biblioteca. Escreva o código para entrar.</p>
+    <input type="password" id="fPin" autocomplete="off" maxlength="40" aria-label="Código de acesso" style="width:100%; padding:8px 10px; border-radius:6px; border:1px solid var(--line-2); background:var(--surface); color:var(--fg); font:inherit; margin-bottom:12px;">
+    <button class="btn btn-pri" type="button" id="btnEntrar">Entrar</button>
+  </div>
+
+  <!-- Contadores principais -->
+  <section class="tiles" aria-label="Resumo">
+    <div class="tile crit">
+      <div class="tile-rot"><span class="ponto"></span>Livros em atraso</div>
+      <div class="tile-val" id="kAtrasados">–</div>
+      <div class="tile-sub">passaram o último prazo</div>
+    </div>
+    <div class="tile">
+      <div class="tile-rot"><span class="ponto"></span>Por entregar</div>
+      <div class="tile-val" id="kPorEntregar">–</div>
+      <div class="tile-sub">fora, dentro do prazo</div>
+    </div>
+    <div class="tile">
+      <div class="tile-rot"><span class="ponto"></span>Presenças</div>
+      <div class="tile-val" id="kPresencas">–</div>
+      <div class="tile-sub">entradas no período</div>
+    </div>
+    <div class="tile">
+      <div class="tile-rot"><span class="ponto"></span>Material fora</div>
+      <div class="tile-val" id="kMaterialFora">–</div>
+      <div class="tile-sub" id="kDanificados">0 danificados no período</div>
+    </div>
+    <div class="tile">
+      <div class="tile-rot"><span class="ponto"></span>Reservas</div>
+      <div class="tile-val" id="kReservas">–</div>
+      <div class="tile-sub">tempos reservados no período</div>
+    </div>
+  </section>
+
+  <!-- Movimento do período -->
+  <section class="card" aria-labelledby="tMov">
+    <div class="card-cab"><h2 id="tMov">Movimento no período</h2><span class="label-xs" id="periodoTxt"></span></div>
+    <div class="minis">
+      <div class="mini"><div class="label-xs">Requisições feitas</div><div class="mini-val" id="kReqs">–</div></div>
+      <div class="mini"><div class="label-xs">Livros devolvidos</div><div class="mini-val" id="kDevolvidos">–</div></div>
+      <div class="mini"><div class="label-xs">Prorrogações (+5 dias)</div><div class="mini-val" id="kProrrog">–</div></div>
+      <div class="mini"><div class="label-xs">Empréstimos de material</div><div class="mini-val" id="kEmpMat">–</div></div>
+    </div>
+  </section>
+
+  <!-- SEPARADOR: PAINEL -->
+  <section class="painel-sep" data-painel="painel">
+    <div class="grelha">
+      <div class="card">
+        <div class="card-cab"><h2>Presenças por atividade</h2><span class="label-xs" id="bAtiv"></span></div>
+        <div class="barras" id="gAtiv"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Presenças por turma</h2><span class="label-xs" id="bTurma"></span></div>
+        <div class="barras" id="gTurma"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Material emprestado por tipo</h2><span class="label-xs" id="bMat"></span></div>
+        <div class="barras" id="gMat"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Reservas por professor / turma</h2><span class="label-xs" id="bRes"></span></div>
+        <div class="barras" id="gRes"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Requisições por turma</h2><span class="label-xs" id="bReqTurma"></span></div>
+        <div class="barras" id="gReqTurma"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Livros mais requisitados</h2><span class="label-xs" id="bLivros"></span></div>
+        <div class="barras" id="gLivros"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Alunos que mais requisitaram</h2><span class="label-xs" id="bLeitores"></span></div>
+        <div class="barras" id="gLeitores"></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Uso dos computadores</h2><span class="label-xs" id="bPcs"></span></div>
+        <div class="barras" id="gPcs"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEPARADOR: LIVROS EM ATRASO -->
+  <section class="painel-sep" data-painel="atrasos" hidden>
+    <div class="card">
+      <div class="card-cab"><h2>Livros em atraso</h2><span class="label-xs">por turma · mais dias primeiro · situação de hoje</span></div>
+      <div class="tabela-wrap">
+        <table class="tab">
+          <thead><tr><th class="n">N.º</th><th>Aluno</th><th>Livro</th><th>Data limite</th><th class="n">Dias</th><th>Estado</th></tr></thead>
+          <tbody id="corpoAtrasos"><tr><td colspan="6" class="vazio">A carregar…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEPARADOR: PRESENÇAS -->
+  <section class="painel-sep" data-painel="presencas" hidden>
+    <div class="grelha">
+      <div class="card">
+        <div class="card-cab"><h2>Por atividade</h2></div>
+        <div class="tabela-wrap"><table class="tab"><thead><tr><th>Atividade</th><th class="n">Presenças</th><th class="n">%</th></tr></thead><tbody id="tAtiv"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Por turma</h2></div>
+        <div class="tabela-wrap"><table class="tab"><thead><tr><th>Turma</th><th class="n">Presenças</th><th class="n">%</th></tr></thead><tbody id="tTurma"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SEPARADOR: MATERIAL E ESPAÇOS -->
+  <section class="painel-sep" data-painel="material" hidden>
+    <div class="grelha">
+      <div class="card">
+        <div class="card-cab"><h2>Material emprestado no período</h2></div>
+        <div class="tabela-wrap"><table class="tab"><thead><tr><th>Tipo</th><th class="n">Empréstimos</th><th class="n">%</th></tr></thead><tbody id="tMat"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="card-cab"><h2>Reservas de espaço no período</h2></div>
+        <div class="tabela-wrap"><table class="tab"><thead><tr><th>Professor / turma</th><th class="n">Tempos</th><th class="n">%</th></tr></thead><tbody id="tRes"></tbody></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>Powered by Claude IA &amp; Ideias&amp;Soltas — concepção de produtos multimédia</footer>
+
+<script>
+(function () {
+  "use strict";
+
+  function $(id) { return document.getElementById(id); }
+  function esc(t) {
+    return String(t === null || t === undefined ? "" : t).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+  function fmt(n) { return Number(n || 0).toLocaleString("pt-PT"); }
+  function plural(n, um, varios) { return fmt(n) + " " + (Number(n) === 1 ? um : varios); }
+
+  // ---------- Tema (a preferência fica guardada só se o browser deixar) ----------
+  var CHAVE_TEMA = "biblioteca_tema";
+  function lerTema() { try { return localStorage.getItem(CHAVE_TEMA); } catch (e) { return null; } }
+  function gravarTema(v) { try { localStorage.setItem(CHAVE_TEMA, v); } catch (e) {} }
+  function aplicarTema(v) {
+    if (v === "dark" || v === "light") document.documentElement.setAttribute("data-theme", v);
+    else document.documentElement.removeAttribute("data-theme");
+  }
+  aplicarTema(lerTema());
+  $("btnTema").addEventListener("click", function () {
+    var atual = document.documentElement.getAttribute("data-theme");
+    if (!atual) atual = (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+    var novo = atual === "dark" ? "light" : "dark";
+    aplicarTema(novo);
+    gravarTema(novo);
+  });
+
+  // ---------- Separadores ----------
+  document.querySelector(".separadores").addEventListener("click", function (ev) {
+    var b = ev.target.closest("[data-sep]");
+    if (!b) return;
+    var alvo = b.getAttribute("data-sep");
+    Array.prototype.forEach.call(document.querySelectorAll(".sep"), function (x) {
+      x.setAttribute("aria-selected", x === b ? "true" : "false");
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".painel-sep"), function (s) {
+      s.hidden = s.getAttribute("data-painel") !== alvo;
+    });
+  });
+
+  // ---------- Filtros ----------
+  function hojeISO(desloc) {
+    var d = new Date();
+    d.setDate(d.getDate() + (desloc || 0));
+    var m = d.getMonth() + 1, dia = d.getDate();
+    return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (dia < 10 ? "0" : "") + dia;
+  }
+  $("fPeriodo").addEventListener("change", function () {
+    var pers = this.value === "personalizado";
+    $("blocoInicio").hidden = !pers;
+    $("blocoFim").hidden = !pers;
+    if (pers) {
+      if (!$("fInicio").value) $("fInicio").value = hojeISO(-30);
+      if (!$("fFim").value) $("fFim").value = hojeISO(0);
+    }
+    carregar();
+  });
+  $("fInicio").addEventListener("change", carregar);
+  $("fFim").addEventListener("change", carregar);
+  $("btnAtualizar").addEventListener("click", carregar);
+  $("btnImprimir").addEventListener("click", function () { window.print(); });
+
+  // ---------- Ligação ao Code.gs ----------
+  var pedido = 0;
+  var TOKEN = "";
+  try { TOKEN = localStorage.getItem("biblioteca_token") || ""; } catch (e) {}
+  function pedirCodigo(msg) {
+    TOKEN = ""; try { localStorage.removeItem("biblioteca_token"); } catch (e) {}
+    $("estado").textContent = "";
+    $("login").style.display = "block";
+    if (msg) { $("avisoErro").textContent = msg; $("avisoErro").style.display = "block"; }
+    $("fPin").value = ""; $("fPin").focus();
+  }
+  function entrar() {
+    var pin = $("fPin").value.trim(); if (!pin) return;
+    $("avisoErro").style.display = "none"; $("btnEntrar").disabled = true;
+    google.script.run
+      .withSuccessHandler(function (t) {
+        TOKEN = t; try { localStorage.setItem("biblioteca_token", t); } catch (e) {}
+        $("btnEntrar").disabled = false; $("login").style.display = "none"; carregar();
+      })
+      .withFailureHandler(function (e) { $("btnEntrar").disabled = false; pedirCodigo((e && e.message) || String(e)); })
+      .entrar(pin);
+  }
+  $("btnEntrar").addEventListener("click", entrar);
+  $("fPin").addEventListener("keydown", function (ev) { if (ev.key === "Enter") entrar(); });
+  function carregar() {
+    var periodo = $("fPeriodo").value, ini = $("fInicio").value, fim = $("fFim").value;
+    if (periodo === "personalizado" && (!ini || !fim)) return;
+    $("avisoErro").style.display = "none";
+    $("estado").textContent = "A carregar…";
+    if (!(window.google && google.script && google.script.run)) {
+      mostrarErro("Esta página tem de ser aberta a partir da aplicação web do Apps Script.");
+      return;
+    }
+    if (!TOKEN) { pedirCodigo(); return; }
+    var meu = ++pedido;
+    google.script.run
+      .withSuccessHandler(function (res) { if (meu === pedido) mostrar(res); })
+      .withFailureHandler(function (e) {
+        if (meu !== pedido) return;
+        var m = String((e && e.message) || e);
+        if (/SESSAO/.test(m)) pedirCodigo(); else mostrarErro("Não foi possível ler a folha de cálculo: " + m);
+      })
+      .painel(TOKEN, periodo, ini, fim);
+  }
+  function mostrarErro(msg) {
+    $("estado").textContent = "";
+    $("avisoErro").textContent = msg;
+    $("avisoErro").style.display = "block";
+  }
+
+  // ---------- Desenho ----------
+  function mostrar(res) {
+    if (!res || !res.resumo) { mostrarErro("A folha de cálculo não devolveu dados."); return; }
+    var r = res.resumo, iv = res.intervalo;
+    var agora = new Date();
+    var hora = (agora.getHours() < 10 ? "0" : "") + agora.getHours() + ":" + (agora.getMinutes() < 10 ? "0" : "") + agora.getMinutes();
+    $("estado").textContent = "Dados lidos às " + hora;
+
+    $("impTitulo").textContent = "Biblioteca Escolar — EB D. Fernando II · " + (iv.tipoRotulo || "Relatório");
+    $("impSub").textContent = "Período: " + iv.inicio + " a " + iv.fim + " · Gerado em " + agora.toLocaleDateString("pt-PT") + " às " + hora;
+    $("periodoTxt").textContent = iv.inicio + " a " + iv.fim;
+
+    $("kAtrasados").textContent = fmt(r.totalAtrasados);
+    $("kPorEntregar").textContent = fmt(r.totalPorEntregar);
+    $("kPresencas").textContent = fmt(r.totalPresencas);
+    $("kMaterialFora").textContent = fmt(r.materialFora);
+    $("kDanificados").textContent = plural(r.materialDanificadoPeriodo, "danificado", "danificados") + " no período";
+    $("kReservas").textContent = fmt(r.totalReservas);
+
+    $("kReqs").textContent = fmt(r.reqsFeitasPeriodo);
+    $("kDevolvidos").textContent = fmt(r.reqsDevolvidasPeriodo);
+    $("kProrrog").textContent = fmt(r.prorrogacoesPeriodo);
+    $("kEmpMat").textContent = fmt(r.totalEmprestimosPeriodo);
+
+    barras("gAtiv", "bAtiv", res.presPorAtividade, "presença", "presenças");
+    barras("gTurma", "bTurma", res.presPorTurma, "presença", "presenças");
+    barras("gMat", "bMat", res.materialPorTipo, "empréstimo", "empréstimos");
+    barras("gRes", "bRes", res.reservasPorProfessor, "tempo", "tempos");
+    barras("gReqTurma", "bReqTurma", res.reqPorTurma || {}, "requisição", "requisições");
+    barras("gLivros", "bLivros", res.livrosMaisRequisitados || {}, "requisição", "requisições");
+    barras("gLeitores", "bLeitores", res.leitoresMaisAtivos || {}, "requisição", "requisições");
+    barras("gPcs", "bPcs", res.usoComputadores || {}, "utilização", "utilizações");
+    $("bLivros").textContent = "os 10 primeiros"; $("bLeitores").textContent = "os 10 primeiros";
+
+    tabela("tAtiv", res.presPorAtividade);
+    tabela("tTurma", res.presPorTurma);
+    tabela("tMat", res.materialPorTipo);
+    tabela("tRes", res.reservasPorProfessor);
+
+    atrasos(res.listaAtrasos || []);
+  }
+
+  function ordenar(dic) {
+    return Object.keys(dic || {}).sort(function (a, b) {
+      return (dic[b] - dic[a]) || a.localeCompare(b, "pt", { numeric: true });
+    });
+  }
+
+  function barras(idCont, idBadge, dic, um, varios) {
+    var ch = ordenar(dic), total = 0, max = 0;
+    ch.forEach(function (k) { total += dic[k]; if (dic[k] > max) max = dic[k]; });
+    $(idBadge).textContent = plural(total, um, varios);
+    if (!total) { $(idCont).innerHTML = "<div class='vazio'>Sem registos no período.</div>"; return; }
+    $(idCont).innerHTML = ch.map(function (k) {
+      var v = dic[k], pct = Math.round(v / total * 100), larg = (v / max * 100).toFixed(1);
+      return "<div class='linha-barra'><span class='lb-nome' title='" + esc(k) + "'>" + esc(k) + "</span>" +
+        "<span class='lb-val'>" + fmt(v) + "</span>" +
+        "<div class='lb-pista' role='img' aria-label='" + esc(k + ": " + v + " (" + pct + "%)") + "'><span style='width:" + larg + "%'></span></div>" +
+        "<span class='lb-pct'>" + pct + "%</span></div>";
+    }).join("");
+  }
+
+  function tabela(idCorpo, dic) {
+    var ch = ordenar(dic), total = 0;
+    ch.forEach(function (k) { total += dic[k]; });
+    if (!total) { $(idCorpo).innerHTML = "<tr><td colspan='3' class='vazio'>Sem registos no período.</td></tr>"; return; }
+    $(idCorpo).innerHTML = ch.map(function (k) {
+      return "<tr><td>" + esc(k) + "</td><td class='n'>" + fmt(dic[k]) + "</td><td class='n fraco'>" +
+        (dic[k] / total * 100).toFixed(1).replace(".", ",") + "%</td></tr>";
+    }).join("") + "<tr class='total'><td>Total</td><td class='n'>" + fmt(total) + "</td><td class='n'>100%</td></tr>";
+  }
+
+  function atrasos(lista) {
+    var corpo = $("corpoAtrasos");
+    if (!lista.length) { corpo.innerHTML = "<tr><td colspan='6' class='vazio'>Não há livros em atraso.</td></tr>"; return; }
+    var grupos = {};
+    lista.forEach(function (it) { var t = it.turma || "Sem turma"; (grupos[t] = grupos[t] || []).push(it); });
+    var h = "";
+    Object.keys(grupos).sort(function (a, b) { return a.localeCompare(b, "pt", { numeric: true }); }).forEach(function (t) {
+      var itens = grupos[t].sort(function (a, b) { return b.dias - a.dias; });
+      h += "<tr class='sub'><td colspan='4'>Turma " + esc(t) + "</td><td colspan='2' class='n'>" +
+        plural(itens.length, "livro em atraso", "livros em atraso") + "</td></tr>";
+      itens.forEach(function (it) {
+        h += "<tr><td class='n fraco'>" + esc(it.num || "–") + "</td>" +
+          "<td><strong>" + esc(it.aluno) + "</strong></td>" +
+          "<td>" + esc(it.livro) + (it.prorrogado ? "<span class='pill pill-prorr'>prorrogado</span>" : "") + "</td>" +
+          "<td class='num'>" + esc(it.limite) + "</td>" +
+          "<td class='n'><strong>" + fmt(it.dias) + "</strong></td>" +
+          "<td>" + (it.dias > 30 ? "<span class='pill pill-30'>Mais de 30 dias</span>" : "<span class='pill pill-atraso'>Atrasado</span>") + "</td></tr>";
+      });
+    });
+    corpo.innerHTML = h;
+  }
+
+  carregar();
+})();
+</script>
+</body>
+</html>
